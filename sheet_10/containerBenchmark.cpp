@@ -30,6 +30,62 @@ enum class DataStructure {
   LINKED_LIST_RANDOM,
 };
 
+struct ArrayAdapter {
+  std::vector<std::vector<char>> &data;
+  std::size_t &cursor;
+  std::size_t elemBytes;
+
+  std::vector<char> &current() { return data[cursor]; }
+  const std::vector<char> &current() const { return data[cursor]; }
+
+  std::size_t position() const { return cursor; }
+
+  void advance() {
+    cursor = (cursor + 1 == data.size()) ? 0 : cursor + 1;
+  }
+
+  void insert(char value) {
+    data.insert(data.begin() + static_cast<std::ptrdiff_t>(cursor),
+                std::vector<char>(elemBytes, value));
+  }
+
+  void erase() {
+    data.erase(data.begin() + static_cast<std::ptrdiff_t>(cursor));
+    cursor = (cursor == data.size()) ? 0 : cursor;
+  }
+};
+
+struct ListAdapter {
+  std::list<std::vector<char>> &data;
+  std::list<std::vector<char>>::iterator &cursor;
+  std::size_t elemBytes;
+
+  std::vector<char> &current() { return *cursor; }
+  const std::vector<char> &current() const { return *cursor; }
+
+  std::size_t position() const { return 0; }
+
+  void advance() {
+    ++cursor;
+    if (cursor == data.end()) {
+      cursor = data.begin();
+    }
+  }
+
+  void insert(char value) {
+    auto inserted = data.insert(cursor, std::vector<char>(elemBytes, value));
+    cursor = inserted;
+    advance();
+  }
+
+  void erase() {
+    cursor = data.erase(cursor);
+    if (cursor == data.end()) {
+      cursor = data.begin();
+    }
+  }
+};
+
 std::string_view dataStructureLabel(DataStructure value) {
   switch (value) {
   case DataStructure::ARRAY:
@@ -74,113 +130,49 @@ struct OperationMix {
   bool nextInsertion;
 };
 
-void performArrayStep(std::vector<std::vector<char>> &arrayData,
-                      std::size_t &cursor, std::uint64_t &seed,
-                      std::uint64_t &checksum, OperationMix &mix,
-                      std::size_t elemBytes) {
+template <typename Adapter>
+void performStep(Adapter &adapter, std::uint64_t &seed,
+                        std::uint64_t &checksum, OperationMix &mix) {
   switch (mix.next()) {
   case OperationKind::READ: {
-    const auto &element = arrayData[cursor];
+    const auto &element = adapter.current();
+    const std::size_t position = adapter.position();
     for (char b : element) {
       const std::uint64_t readValue = static_cast<unsigned char>(b);
-      seed = seed * 1'664'525u + 1'013'904'223u + readValue + cursor;
+      seed = seed * 1'664'525u + 1'013'904'223u + readValue + position;
       checksum ^= seed ^ readValue;
     }
-    cursor = (cursor + 1 == arrayData.size()) ? 0 : cursor + 1;
+    adapter.advance();
     break;
   }
   case OperationKind::WRITE: {
-    auto &element = arrayData[cursor];
+    auto &element = adapter.current();
+    const std::size_t position = adapter.position();
     for (char &b : element) {
-      const std::uint64_t writeValue = (seed + checksum + cursor) & 0xFFu;
+      const std::uint64_t writeValue = (seed + checksum + position) & 0xFFu;
       b = static_cast<char>(writeValue);
-      seed = seed * 1'664'525u + 1'013'904'223u + writeValue + cursor;
+      seed = seed * 1'664'525u + 1'013'904'223u + writeValue + position;
       checksum ^= seed ^ writeValue;
     }
-    cursor = (cursor + 1 == arrayData.size()) ? 0 : cursor + 1;
+    adapter.advance();
     break;
   }
   case OperationKind::INSERT: {
+    const std::size_t position = adapter.position();
     const auto insertValue =
-        static_cast<char>((seed + checksum + cursor) & 0xFFu);
-    arrayData.insert(arrayData.begin() + static_cast<std::ptrdiff_t>(cursor),
-                     std::vector<char>(elemBytes, insertValue));
+        static_cast<char>((seed + checksum + position) & 0xFFu);
+    adapter.insert(insertValue);
     seed = seed * 1'664'525u + 1'013'904'223u +
-           static_cast<unsigned char>(insertValue) + cursor;
+           static_cast<unsigned char>(insertValue) + position;
     checksum ^= seed ^ static_cast<unsigned char>(insertValue);
-    cursor = (cursor + 1 == arrayData.size()) ? 0 : cursor + 1;
     break;
   }
-
-  // TODO: access all bytes
   case OperationKind::ERASE: {
-    const std::size_t eraseIndex = cursor;
+    const std::size_t position = adapter.position();
     const std::uint64_t erasedValue =
-        static_cast<unsigned char>(arrayData[cursor][0]);
-    arrayData.erase(arrayData.begin() + static_cast<std::ptrdiff_t>(cursor));
-    seed = seed * 1'664'525u + 1'013'904'223u + erasedValue + eraseIndex;
-    checksum ^= seed ^ erasedValue;
-    cursor = (eraseIndex == arrayData.size()) ? 0 : eraseIndex;
-    break;
-  }
-  }
-}
-
-void performListStep(std::list<std::vector<char>> &listData,
-                     std::list<std::vector<char>>::iterator &cursor,
-                     std::uint64_t &seed, std::uint64_t &checksum,
-                     OperationMix &mix, std::size_t elemBytes) {
-  switch (mix.next()) {
-  case OperationKind::READ: {
-    const auto &element = *cursor;
-    for (char b : element) {
-      const std::uint64_t readValue = static_cast<unsigned char>(b);
-      seed = seed * 1'664'525u + 1'013'904'223u + readValue;
-      checksum ^= seed ^ readValue;
-    }
-    ++cursor;
-    if (cursor == listData.end()) {
-      cursor = listData.begin();
-    }
-    break;
-  }
-  case OperationKind::WRITE: {
-    auto &element = *cursor;
-    for (char &b : element) {
-      const std::uint64_t writeValue = (seed + checksum) & 0xFFu;
-      b = static_cast<char>(writeValue);
-      seed = seed * 1'664'525u + 1'013'904'223u + writeValue;
-      checksum ^= seed ^ writeValue;
-    }
-    ++cursor;
-    if (cursor == listData.end()) {
-      cursor = listData.begin();
-    }
-    break;
-  }
-  case OperationKind::INSERT: {
-    const auto insertValue = static_cast<char>((seed + checksum) & 0xFFu);
-    auto inserted =
-        listData.insert(cursor, std::vector<char>(elemBytes, insertValue));
-    ++inserted;
-    cursor = inserted;
-    if (cursor == listData.end()) {
-      cursor = listData.begin();
-    }
-    seed = seed * 1'664'525u + 1'013'904'223u +
-           static_cast<unsigned char>(insertValue);
-    checksum ^= seed ^ static_cast<unsigned char>(insertValue);
-    break;
-  }
-
-  // TODO: access all bytes
-  case OperationKind::ERASE: {
-    const std::uint64_t erasedValue = static_cast<unsigned char>((*cursor)[0]);
-    cursor = listData.erase(cursor);
-    if (cursor == listData.end()) {
-      cursor = listData.begin();
-    }
-    seed = seed * 1'664'525u + 1'013'904'223u + erasedValue;
+        static_cast<unsigned char>(adapter.current()[0]);
+    adapter.erase();
+    seed = seed * 1'664'525u + 1'013'904'223u + erasedValue + position;
     checksum ^= seed ^ erasedValue;
     break;
   }
@@ -307,8 +299,8 @@ int main(int argc, char **argv) {
     runBenchmark("array", elementCountValue, elemBytes, insDelPercentValue,
                  [&](std::uint64_t &seed, std::uint64_t &checksum,
                      OperationMix &mix) {
-                   performArrayStep(arrayData, cursor, seed, checksum, mix,
-                                    elemBytes);
+                   ArrayAdapter adapter{arrayData, cursor, elemBytes};
+                   performStep(adapter, seed, checksum, mix);
                  });
   } else {
     std::list<std::vector<char>> listData;
@@ -323,8 +315,8 @@ int main(int argc, char **argv) {
                  elemBytes, insDelPercentValue,
                  [&](std::uint64_t &seed, std::uint64_t &checksum,
                      OperationMix &mix) {
-                   performListStep(listData, cursor, seed, checksum, mix,
-                                   elemBytes);
+                   ListAdapter adapter{listData, cursor, elemBytes};
+                   performStep(adapter, seed, checksum, mix);
                  });
   }
 }
