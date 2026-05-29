@@ -392,7 +392,7 @@ bool parseBenchmarkConfig(int argc, char **argv, BenchmarkConfig &config) {
     return false;
   }
 
-  config.unrolledMaxChunkSize = (argc == 7) ? std::stoull(argv[6]) : 64;
+  config.unrolledMaxChunkSize = (argc == 7) ? std::stoull(argv[6]) : 16;
 
   return true;
 }
