@@ -5,11 +5,13 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <list>
 #include <new>
 #include <numeric>
 #include <random>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -31,6 +33,60 @@ enum class DataStructure {
   UNROLLED_LINKED_LIST,
 };
 
+enum class AccessPattern {
+  SEQUENTIAL,
+  RANDOM,
+};
+
+std::string_view accessPatternLabel(AccessPattern value) {
+  switch (value) {
+  case AccessPattern::SEQUENTIAL:
+    return "sequential";
+  case AccessPattern::RANDOM:
+    return "random";
+  }
+  return "unknown";
+}
+
+bool parseAccessPattern(std::string_view text, AccessPattern &value) {
+  if (text == "sequential" || text == "SEQUENTIAL") {
+    value = AccessPattern::SEQUENTIAL;
+    return true;
+  }
+  if (text == "random" || text == "RANDOM") {
+    value = AccessPattern::RANDOM;
+    return true;
+  }
+  return false;
+}
+
+struct RandomPositionStream {
+  static constexpr std::size_t bufferSize = 1u << 16;
+
+  RandomPositionStream()
+      : positions(bufferSize),
+        rng(static_cast<std::mt19937_64::result_type>(std::rand())) {
+    for (auto &position : positions) {
+      position = rng();
+    }
+  }
+
+  std::size_t next(std::size_t currentSize) {
+    if (currentSize == 0) {
+      return 0;
+    }
+
+    const std::size_t position =
+        static_cast<std::size_t>(positions[index] % currentSize);
+    index = (index + 1 == positions.size()) ? 0 : index + 1;
+    return position;
+  }
+
+  std::vector<std::uint64_t> positions;
+  std::size_t index = 0;
+  std::mt19937_64 rng;
+};
+
 struct ArrayAdapter {
   std::vector<std::vector<char>> &data;
   std::size_t &cursor;
@@ -41,9 +97,9 @@ struct ArrayAdapter {
 
   std::size_t position() const { return cursor; }
 
-  void advance() {
-    cursor = (cursor + 1 == data.size()) ? 0 : cursor + 1;
-  }
+  void seek(std::size_t position) { cursor = position; }
+
+  void advance() { cursor = (cursor + 1 == data.size()) ? 0 : cursor + 1; }
 
   void insert(char value) {
     data.insert(data.begin() + static_cast<std::ptrdiff_t>(cursor),
@@ -65,6 +121,11 @@ struct ListAdapter {
   const std::vector<char> &current() const { return *cursor; }
 
   std::size_t position() const { return 0; }
+
+  void seek(std::size_t position) {
+    cursor = data.begin();
+    std::advance(cursor, static_cast<std::ptrdiff_t>(position));
+  }
 
   void advance() {
     ++cursor;
@@ -98,6 +159,24 @@ struct UnrolledListAdapter {
   const std::vector<char> &current() const { return *cursor; }
 
   std::size_t position() const { return elementIdx; }
+
+  void seek(std::size_t position) {
+    cursor = data.begin();
+    elementIdx = position;
+
+    while (cursor != data.end()) {
+      const std::size_t elementsInChunk = cursor->size() / elemBytes;
+      if (elementIdx < elementsInChunk) {
+        return;
+      }
+
+      elementIdx -= elementsInChunk;
+      ++cursor;
+    }
+
+    cursor = data.begin();
+    elementIdx = 0;
+  }
 
   void advance() {
     ++elementIdx;
@@ -166,7 +245,15 @@ struct UnrolledListAdapter {
   }
 
   template <typename Mix>
-  void step(std::uint64_t &seed, std::uint64_t &checksum, Mix &mix) {
+  void step(std::uint64_t &seed, std::uint64_t &checksum, Mix &mix,
+            AccessPattern accessPattern, RandomPositionStream &randomPositions,
+            std::size_t &currentElementCount) {
+    std::size_t position = elementIdx;
+    if (accessPattern == AccessPattern::RANDOM) {
+      position = randomPositions.next(currentElementCount);
+      seek(position);
+    }
+
     switch (mix.next()) {
     case OperationKind::READ: {
       const auto &chunk = current();
@@ -177,7 +264,9 @@ struct UnrolledListAdapter {
         seed = seed * 1'664'525u + 1'013'904'223u + readValue;
         checksum ^= seed ^ readValue;
       }
-      advance();
+      if (accessPattern == AccessPattern::SEQUENTIAL) {
+        advance();
+      }
       break;
     }
     case OperationKind::WRITE: {
@@ -189,7 +278,9 @@ struct UnrolledListAdapter {
         seed = seed * 1'664'525u + 1'013'904'223u + writeValue;
         checksum ^= seed ^ writeValue;
       }
-      advance();
+      if (accessPattern == AccessPattern::SEQUENTIAL) {
+        advance();
+      }
       break;
     }
     case OperationKind::INSERT: {
@@ -198,6 +289,7 @@ struct UnrolledListAdapter {
       seed = seed * 1'664'525u + 1'013'904'223u +
              static_cast<unsigned char>(insertValue);
       checksum ^= seed ^ static_cast<unsigned char>(insertValue);
+      ++currentElementCount;
       break;
     }
     case OperationKind::ERASE: {
@@ -206,6 +298,9 @@ struct UnrolledListAdapter {
       erase();
       seed = seed * 1'664'525u + 1'013'904'223u + erasedValue;
       checksum ^= seed ^ erasedValue;
+      if (currentElementCount > 0) {
+        --currentElementCount;
+      }
       break;
     }
     }
@@ -258,50 +353,107 @@ struct OperationMix {
   bool nextInsertion;
 };
 
+bool parseDataStructure(std::string_view text, DataStructure &value);
+bool parseAccessPattern(std::string_view text, AccessPattern &value);
+
+struct StepState {
+  std::uint64_t seed;
+  std::uint64_t checksum;
+  OperationMix mix;
+  AccessPattern accessPattern;
+  RandomPositionStream randomPositions;
+  std::size_t currentElementCount;
+};
+
+struct BenchmarkConfig {
+  DataStructure dataStructure;
+  std::size_t insDelPercent;
+  std::size_t elemBytes;
+  std::size_t elementCount;
+  std::size_t unrolledMaxChunkSize;
+  AccessPattern accessPattern;
+};
+
+bool parseBenchmarkConfig(int argc, char **argv, BenchmarkConfig &config) {
+  if (argc != 5 && argc != 6 && argc != 7) {
+    return false;
+  }
+
+  if (!parseDataStructure(argv[1], config.dataStructure)) {
+    std::cerr << "Invalid DataStructure argument: " << argv[1] << "\n";
+    return false;
+  }
+
+  config.insDelPercent = std::stoull(argv[2]);
+  config.elemBytes = std::stoull(argv[3]);
+  config.elementCount = std::stoull(argv[4]);
+  config.unrolledMaxChunkSize = (argc == 6) ? std::stoull(argv[5]) : 64;
+  config.accessPattern = AccessPattern::SEQUENTIAL;
+  if (argc == 7 && !parseAccessPattern(argv[6], config.accessPattern)) {
+    std::cerr << "Invalid access-pattern argument: " << argv[6] << "\n";
+    return false;
+  }
+
+  return true;
+}
+
 template <typename Adapter>
-void performStep(Adapter &adapter, std::uint64_t &seed,
-                        std::uint64_t &checksum, OperationMix &mix) {
-  switch (mix.next()) {
+void performStep(Adapter &adapter, StepState &state) {
+  std::size_t position = adapter.position();
+  if (state.accessPattern == AccessPattern::RANDOM) {
+    position = state.randomPositions.next(state.currentElementCount);
+    adapter.seek(position);
+  }
+
+  switch (state.mix.next()) {
   case OperationKind::READ: {
     const auto &element = adapter.current();
-    const std::size_t position = adapter.position();
     for (char b : element) {
       const std::uint64_t readValue = static_cast<unsigned char>(b);
-      seed = seed * 1'664'525u + 1'013'904'223u + readValue + position;
-      checksum ^= seed ^ readValue;
+      state.seed =
+          state.seed * 1'664'525u + 1'013'904'223u + readValue + position;
+      state.checksum ^= state.seed ^ readValue;
     }
-    adapter.advance();
+    if (state.accessPattern == AccessPattern::SEQUENTIAL) {
+      adapter.advance();
+    }
     break;
   }
   case OperationKind::WRITE: {
     auto &element = adapter.current();
-    const std::size_t position = adapter.position();
     for (char &b : element) {
-      const std::uint64_t writeValue = (seed + checksum + position) & 0xFFu;
+      const std::uint64_t writeValue =
+          (state.seed + state.checksum + position) & 0xFFu;
       b = static_cast<char>(writeValue);
-      seed = seed * 1'664'525u + 1'013'904'223u + writeValue + position;
-      checksum ^= seed ^ writeValue;
+      state.seed =
+          state.seed * 1'664'525u + 1'013'904'223u + writeValue + position;
+      state.checksum ^= state.seed ^ writeValue;
     }
-    adapter.advance();
+    if (state.accessPattern == AccessPattern::SEQUENTIAL) {
+      adapter.advance();
+    }
     break;
   }
   case OperationKind::INSERT: {
-    const std::size_t position = adapter.position();
     const auto insertValue =
-        static_cast<char>((seed + checksum + position) & 0xFFu);
+        static_cast<char>((state.seed + state.checksum + position) & 0xFFu);
     adapter.insert(insertValue);
-    seed = seed * 1'664'525u + 1'013'904'223u +
-           static_cast<unsigned char>(insertValue) + position;
-    checksum ^= seed ^ static_cast<unsigned char>(insertValue);
+    state.seed = state.seed * 1'664'525u + 1'013'904'223u +
+                 static_cast<unsigned char>(insertValue) + position;
+    state.checksum ^= state.seed ^ static_cast<unsigned char>(insertValue);
+    ++state.currentElementCount;
     break;
   }
   case OperationKind::ERASE: {
-    const std::size_t position = adapter.position();
     const std::uint64_t erasedValue =
         static_cast<unsigned char>(adapter.current()[0]);
     adapter.erase();
-    seed = seed * 1'664'525u + 1'013'904'223u + erasedValue + position;
-    checksum ^= seed ^ erasedValue;
+    state.seed =
+        state.seed * 1'664'525u + 1'013'904'223u + erasedValue + position;
+    state.checksum ^= state.seed ^ erasedValue;
+    if (state.currentElementCount > 0) {
+      --state.currentElementCount;
+    }
     break;
   }
   }
@@ -341,17 +493,13 @@ bool parseDataStructure(std::string_view text, DataStructure &value) {
     value = DataStructure::ARRAY;
     return true;
   }
-  if (text == "linked_list_sequential" ||
-      text == "linked_list_seq" || 
-      text == "LINKED_LIST_SEQ" ||
-      text == "LINKED_LIST_SEQUENTIAL") {
+  if (text == "linked_list_sequential" || text == "linked_list_seq" ||
+      text == "LINKED_LIST_SEQ" || text == "LINKED_LIST_SEQUENTIAL") {
     value = DataStructure::LINKED_LIST_SEQUENTIAL;
     return true;
   }
-  if (text == "linked_list_random" || 
-    text == "linked_list_rand" || 
-    text == "LINKED_LIST_RAND" || 
-    text == "LINKED_LIST_RANDOM") {
+  if (text == "linked_list_random" || text == "linked_list_rand" ||
+      text == "LINKED_LIST_RAND" || text == "LINKED_LIST_RANDOM") {
     value = DataStructure::LINKED_LIST_RANDOM;
     return true;
   }
@@ -363,8 +511,7 @@ bool parseDataStructure(std::string_view text, DataStructure &value) {
 }
 
 void populateUnrolledLinkedList(std::list<std::vector<char>> &listData,
-                                std::size_t elementCount,
-                                std::size_t elemBytes,
+                                std::size_t elementCount, std::size_t elemBytes,
                                 std::size_t unrolledMaxChunkSize) {
   std::size_t remaining = elementCount;
   while (remaining > 0) {
@@ -377,16 +524,19 @@ void populateUnrolledLinkedList(std::list<std::vector<char>> &listData,
 template <typename StepFn>
 void runBenchmark(std::string_view label, std::size_t elementCount,
                   std::size_t elemBytes, std::size_t insDelPercent,
-                  StepFn &&stepFn) {
-  std::uint64_t checksum = 0;
-  std::uint64_t seed = static_cast<std::uint64_t>(std::rand());
-  OperationMix mix{insDelPercent};
+                  AccessPattern accessPattern, StepFn &&stepFn) {
+  StepState state{static_cast<std::uint64_t>(std::rand()),
+                  0,
+                  OperationMix{insDelPercent},
+                  accessPattern,
+                  RandomPositionStream{},
+                  elementCount};
 
   // Warmup
   const auto warmupEnd = std::chrono::steady_clock::now() + warmupDuration;
   while (std::chrono::steady_clock::now() < warmupEnd) {
     for (std::size_t i = 0; i < chunkSize; ++i) {
-      stepFn(seed, checksum, mix);
+      stepFn(state);
     }
   }
 
@@ -397,7 +547,7 @@ void runBenchmark(std::string_view label, std::size_t elementCount,
 
   while (std::chrono::steady_clock::now() < measureEnd) {
     for (std::size_t i = 0; i < chunkSize; ++i) {
-      stepFn(seed, checksum, mix);
+      stepFn(state);
       ++operations;
     }
   }
@@ -407,75 +557,71 @@ void runBenchmark(std::string_view label, std::size_t elementCount,
 
   std::cout << label << "," << elementCount << "," << elemBytes << ","
             << insDelPercent << ","
-            << (static_cast<double>(operations) / seconds) << "," << checksum
-            << std::endl;
+            << (static_cast<double>(operations) / seconds) << ","
+            << state.checksum << std::endl;
 }
 
 int main(int argc, char **argv) {
-  if (argc != 5 && argc != 6) {
-    std::cerr << "Usage: " << argv[0]
-              << " <data-structure> <ins-del-percent> <element-size> "
-                 "<element-count> [unrolled-max-chunk-size]\n";
+  BenchmarkConfig config{};
+  if (!parseBenchmarkConfig(argc, argv, config)) {
+    if (argc != 5 && argc != 6 && argc != 7) {
+      std::cerr
+          << "Usage: " << argv[0]
+          << " <data-structure> <ins-del-percent> <element-size> "
+             "<element-count> [unrolled-max-chunk-size] [access-pattern]\n";
+    }
     return 1;
   }
-
-  DataStructure dataStructure{};
-  if (!parseDataStructure(argv[1], dataStructure)) {
-    std::cerr << "Invalid DataStructure argument: " << argv[1] << "\n";
-    return 1;
-  }
-
-  const std::size_t insDelPercentValue = std::stoull(argv[2]);
-  const std::size_t elemBytes = std::stoull(argv[3]);
-  const std::size_t elementCountValue = std::stoull(argv[4]);
-  const std::size_t unrolledMaxChunkSize =
-      (argc == 6) ? std::stoull(argv[5]) : 64;
 
   // Seed the simple C RNG once for std::rand
   std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-  if (dataStructure == DataStructure::ARRAY) {
+  if (config.dataStructure == DataStructure::ARRAY) {
     std::vector<std::vector<char>> arrayData;
-    arrayData.reserve(elementCountValue + 1);
-    for (std::size_t i = 0; i < elementCountValue; ++i) {
-      arrayData.emplace_back(elemBytes);
+    arrayData.reserve(config.elementCount + 1);
+    for (std::size_t i = 0; i < config.elementCount; ++i) {
+      arrayData.emplace_back(config.elemBytes);
     }
 
     std::size_t cursor = 0;
-    runBenchmark("array", elementCountValue, elemBytes, insDelPercentValue,
-                 [&](std::uint64_t &seed, std::uint64_t &checksum,
-                     OperationMix &mix) {
-                   ArrayAdapter adapter{arrayData, cursor, elemBytes};
-                   performStep(adapter, seed, checksum, mix);
+    runBenchmark(std::string(dataStructureLabel(config.dataStructure)) + "_" +
+                     std::string(accessPatternLabel(config.accessPattern)),
+                 config.elementCount, config.elemBytes, config.insDelPercent,
+                 config.accessPattern, [&](StepState &state) {
+                   ArrayAdapter adapter{arrayData, cursor, config.elemBytes};
+                   performStep(adapter, state);
                  });
   } else {
     std::list<std::vector<char>> listData;
-    if (dataStructure == DataStructure::LINKED_LIST_SEQUENTIAL) {
-      populateSequentialLinkedList(listData, elementCountValue, elemBytes);
-    } else if (dataStructure == DataStructure::LINKED_LIST_RANDOM) {
-      populateRandomLinkedList(listData, elementCountValue, elemBytes);
+    if (config.dataStructure == DataStructure::LINKED_LIST_SEQUENTIAL) {
+      populateSequentialLinkedList(listData, config.elementCount,
+                                   config.elemBytes);
+    } else if (config.dataStructure == DataStructure::LINKED_LIST_RANDOM) {
+      populateRandomLinkedList(listData, config.elementCount, config.elemBytes);
     } else {
-      populateUnrolledLinkedList(listData, elementCountValue, elemBytes,
-                                 unrolledMaxChunkSize);
+      populateUnrolledLinkedList(listData, config.elementCount,
+                                 config.elemBytes, config.unrolledMaxChunkSize);
     }
 
     auto cursor = listData.begin();
-    if (dataStructure == DataStructure::UNROLLED_LINKED_LIST) {
-      UnrolledListAdapter adapter{listData, cursor, elemBytes,
-                                  unrolledMaxChunkSize, 0};
-      runBenchmark(dataStructureLabel(dataStructure), elementCountValue,
-                   elemBytes, insDelPercentValue,
-                   [&](std::uint64_t &seed, std::uint64_t &checksum,
-                       OperationMix &mix) {
-                     adapter.step(seed, checksum, mix);
+    if (config.dataStructure == DataStructure::UNROLLED_LINKED_LIST) {
+      UnrolledListAdapter adapter{listData, cursor, config.elemBytes,
+                                  config.unrolledMaxChunkSize, 0};
+      runBenchmark(std::string(dataStructureLabel(config.dataStructure)) + "_" +
+                       std::string(accessPatternLabel(config.accessPattern)),
+                   config.elementCount, config.elemBytes, config.insDelPercent,
+                   config.accessPattern, [&](StepState &state) {
+                     adapter.step(state.seed, state.checksum, state.mix,
+                                  state.accessPattern, state.randomPositions,
+                                  state.currentElementCount);
                    });
     } else {
-      runBenchmark(dataStructureLabel(dataStructure), elementCountValue,
-                   elemBytes, insDelPercentValue,
-                   [&](std::uint64_t &seed, std::uint64_t &checksum,
-                       OperationMix &mix) {
-                     ListAdapter adapter{listData, cursor, elemBytes};
-                     performStep(adapter, seed, checksum, mix);
+      runBenchmark(std::string(dataStructureLabel(config.dataStructure)) + "_" +
+                       std::string(accessPatternLabel(config.accessPattern)),
+                   config.elementCount, config.elemBytes, config.insDelPercent,
+                   config.accessPattern, [&](StepState &state) {
+                     ListAdapter adapter{listData, cursor, config.elemBytes};
+                     performStep(adapter, state);
                    });
     }
   }
