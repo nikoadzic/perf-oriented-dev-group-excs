@@ -49,11 +49,11 @@ std::string_view accessPatternLabel(AccessPattern value) {
 }
 
 bool parseAccessPattern(std::string_view text, AccessPattern &value) {
-  if (text == "sequential" || text == "SEQUENTIAL") {
+  if (text == "sequential" || text == "SEQUENTIAL" || text == "SEQ") {
     value = AccessPattern::SEQUENTIAL;
     return true;
   }
-  if (text == "random" || text == "RANDOM") {
+  if (text == "random" || text == "RANDOM" || text == "RAND") {
     value = AccessPattern::RANDOM;
     return true;
   }
@@ -375,7 +375,7 @@ struct BenchmarkConfig {
 };
 
 bool parseBenchmarkConfig(int argc, char **argv, BenchmarkConfig &config) {
-  if (argc != 5 && argc != 6 && argc != 7) {
+  if (argc != 6 && argc != 7) {
     return false;
   }
 
@@ -387,12 +387,12 @@ bool parseBenchmarkConfig(int argc, char **argv, BenchmarkConfig &config) {
   config.insDelPercent = std::stoull(argv[2]);
   config.elemBytes = std::stoull(argv[3]);
   config.elementCount = std::stoull(argv[4]);
-  config.unrolledMaxChunkSize = (argc == 6) ? std::stoull(argv[5]) : 64;
-  config.accessPattern = AccessPattern::SEQUENTIAL;
-  if (argc == 7 && !parseAccessPattern(argv[6], config.accessPattern)) {
-    std::cerr << "Invalid access-pattern argument: " << argv[6] << "\n";
+  if (!parseAccessPattern(argv[5], config.accessPattern)) {
+    std::cerr << "Invalid access-pattern argument: " << argv[5] << "\n";
     return false;
   }
+
+  config.unrolledMaxChunkSize = (argc == 7) ? std::stoull(argv[6]) : 64;
 
   return true;
 }
@@ -558,17 +558,17 @@ void runBenchmark(std::string_view label, std::size_t elementCount,
   std::cout << label << "," << elementCount << "," << elemBytes << ","
             << insDelPercent << ","
             << (static_cast<double>(operations) / seconds) << ","
-            << state.checksum << std::endl;
+            << accessPatternLabel(accessPattern) << "," << state.checksum << std::endl;
 }
 
 int main(int argc, char **argv) {
   BenchmarkConfig config{};
   if (!parseBenchmarkConfig(argc, argv, config)) {
-    if (argc != 5 && argc != 6 && argc != 7) {
+    if (argc != 6 && argc != 7) {
       std::cerr
           << "Usage: " << argv[0]
           << " <data-structure> <ins-del-percent> <element-size> "
-             "<element-count> [unrolled-max-chunk-size] [access-pattern]\n";
+             "<element-count> <access-pattern> [unrolled-max-chunk-size]\n";
     }
     return 1;
   }
@@ -584,8 +584,7 @@ int main(int argc, char **argv) {
     }
 
     std::size_t cursor = 0;
-    runBenchmark(std::string(dataStructureLabel(config.dataStructure)) + "_" +
-                     std::string(accessPatternLabel(config.accessPattern)),
+    runBenchmark(std::string(dataStructureLabel(config.dataStructure)),
                  config.elementCount, config.elemBytes, config.insDelPercent,
                  config.accessPattern, [&](StepState &state) {
                    ArrayAdapter adapter{arrayData, cursor, config.elemBytes};
@@ -607,8 +606,7 @@ int main(int argc, char **argv) {
     if (config.dataStructure == DataStructure::UNROLLED_LINKED_LIST) {
       UnrolledListAdapter adapter{listData, cursor, config.elemBytes,
                                   config.unrolledMaxChunkSize, 0};
-      runBenchmark(std::string(dataStructureLabel(config.dataStructure)) + "_" +
-                       std::string(accessPatternLabel(config.accessPattern)),
+      runBenchmark(std::string(dataStructureLabel(config.dataStructure)),
                    config.elementCount, config.elemBytes, config.insDelPercent,
                    config.accessPattern, [&](StepState &state) {
                      adapter.step(state.seed, state.checksum, state.mix,
@@ -616,8 +614,7 @@ int main(int argc, char **argv) {
                                   state.currentElementCount);
                    });
     } else {
-      runBenchmark(std::string(dataStructureLabel(config.dataStructure)) + "_" +
-                       std::string(accessPatternLabel(config.accessPattern)),
+      runBenchmark(std::string(dataStructureLabel(config.dataStructure)),
                    config.elementCount, config.elemBytes, config.insDelPercent,
                    config.accessPattern, [&](StepState &state) {
                      ListAdapter adapter{listData, cursor, config.elemBytes};

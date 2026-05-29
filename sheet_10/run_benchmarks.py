@@ -14,11 +14,13 @@ OUTPUT_FILE = Path("benchmark_results.csv")
 # INS_DEL_FRACTIONS = ["0", "1", "10", "50"]
 # ELEMENT_SIZES = [("8B", 8), ("512B", 512), ("8MB", 8 * 1024 * 1024)]
 # ELEMENT_COUNTS = [10, 1000, 100000, 10000000]
+# ACCESS_PATTERN = ["SEQ", "RAND"]
 
 DATA_STRUCTURES = ["unrolled_linked_list"]
-INS_DEL_FRACTIONS = ["0", "1"]
+INS_DEL_FRACTIONS = ["1"]
 ELEMENT_SIZES = [("8B", 8)]
-ELEMENT_COUNTS = [10, 1000]
+ELEMENT_COUNTS = [1000]
+ACCESS_PATTERN = ["SEQ", "RAND"]
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
@@ -42,32 +44,33 @@ def should_skip(ds: str, elem_bytes: int, count: int) -> bool:
 def main() -> int:
     exe = benchmark_executable()
     OUTPUT_FILE.write_text(
-        "label,elements,bytes,ins_del_percent,ops_per_second,checksum\n"
+        "label,elements,bytes,ins_del_percent,ops_per_second,access_pattern,checksum\n"
     )
 
     for ds in DATA_STRUCTURES:
         for ins_del in INS_DEL_FRACTIONS:
             for size_label, elem_bytes in ELEMENT_SIZES:
                 for count in ELEMENT_COUNTS:
-                    if should_skip(ds, elem_bytes, count):
-                        skipped = (
-                            f"# skipped {ds} {ins_del} {size_label} {count} "
-                            f"estimated={estimated_bytes(ds, elem_bytes, count)}\n"
+                    for pattern in ACCESS_PATTERN:
+                        if should_skip(ds, elem_bytes, count):
+                            skipped = (
+                                f"# skipped {ds} {ins_del} {size_label} {count} {pattern} "
+                                f"estimated={estimated_bytes(ds, elem_bytes, count)}\n"
+                            )
+                            with OUTPUT_FILE.open("a", encoding="utf-8") as handle:
+                                handle.write(skipped)
+                            continue
+
+                        result = subprocess.run(
+                            [str(exe), ds, ins_del, size_label, str(count), pattern],
+                            check=True,
+                            capture_output=True,
+                            text=True,
                         )
                         with OUTPUT_FILE.open("a", encoding="utf-8") as handle:
-                            handle.write(skipped)
-                        continue
-
-                    result = subprocess.run(
-                        [str(exe), ds, ins_del, size_label, str(count)],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    with OUTPUT_FILE.open("a", encoding="utf-8") as handle:
-                        handle.write(result.stdout)
-                        if result.stderr:
-                            handle.write(result.stderr)
+                            handle.write(result.stdout)
+                            if result.stderr:
+                                handle.write(result.stderr)
 
     return 0
 
