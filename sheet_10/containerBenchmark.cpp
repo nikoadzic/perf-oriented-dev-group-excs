@@ -28,6 +28,7 @@ enum class DataStructure {
   ARRAY,
   LINKED_LIST_SEQUENTIAL,
   LINKED_LIST_RANDOM,
+  UNROLLED_LINKED_LIST,
 };
 
 struct ArrayAdapter {
@@ -86,6 +87,131 @@ struct ListAdapter {
   }
 };
 
+struct UnrolledListAdapter {
+  std::list<std::vector<char>> &data;
+  std::list<std::vector<char>>::iterator &cursor;
+  std::size_t elemBytes;
+  std::size_t unrolledMaxChunkSize;
+  std::size_t elementIdx;
+
+  std::vector<char> &current() { return *cursor; }
+  const std::vector<char> &current() const { return *cursor; }
+
+  std::size_t position() const { return elementIdx; }
+
+  void advance() {
+    ++elementIdx;
+    if (elementIdx >= cursor->size() / elemBytes) {
+      elementIdx = 0;
+      ++cursor;
+      if (cursor == data.end()) {
+        cursor = data.begin();
+      }
+    }
+  }
+
+  void insert(char value) {
+    auto &chunk = *cursor;
+    const std::size_t startByte = elementIdx * elemBytes;
+
+    chunk.insert(chunk.begin() + static_cast<std::ptrdiff_t>(startByte),
+                 elemBytes, value);
+
+    if (chunk.size() / elemBytes > unrolledMaxChunkSize) {
+      std::size_t totalElements = chunk.size() / elemBytes;
+      std::size_t firstHalfElements = totalElements / 2;
+      std::size_t secondHalfElements = totalElements - firstHalfElements;
+
+      std::vector<char> nextChunk;
+      nextChunk.reserve(secondHalfElements * elemBytes);
+      auto splitIt = chunk.begin() +
+                     static_cast<std::ptrdiff_t>(firstHalfElements * elemBytes);
+      nextChunk.assign(std::make_move_iterator(splitIt),
+                       std::make_move_iterator(chunk.end()));
+      chunk.erase(splitIt, chunk.end());
+
+      auto newChunkIt = data.insert(std::next(cursor), std::move(nextChunk));
+      if (elementIdx >= firstHalfElements) {
+        cursor = newChunkIt;
+        elementIdx -= firstHalfElements;
+      }
+    }
+
+    advance();
+  }
+
+  void erase() {
+    auto &chunk = *cursor;
+    const std::size_t startByte = elementIdx * elemBytes;
+
+    chunk.erase(chunk.begin() + static_cast<std::ptrdiff_t>(startByte),
+                chunk.begin() +
+                    static_cast<std::ptrdiff_t>(startByte + elemBytes));
+
+    if (chunk.empty()) {
+      cursor = data.erase(cursor);
+      elementIdx = 0;
+      if (cursor == data.end()) {
+        cursor = data.begin();
+      }
+    } else {
+      if (elementIdx >= chunk.size() / elemBytes) {
+        elementIdx = 0;
+        ++cursor;
+        if (cursor == data.end()) {
+          cursor = data.begin();
+        }
+      }
+    }
+  }
+
+  template <typename Mix>
+  void step(std::uint64_t &seed, std::uint64_t &checksum, Mix &mix) {
+    switch (mix.next()) {
+    case OperationKind::READ: {
+      const auto &chunk = current();
+      const std::size_t startByte = elementIdx * elemBytes;
+      for (std::size_t i = 0; i < elemBytes; ++i) {
+        const std::uint64_t readValue =
+            static_cast<unsigned char>(chunk[startByte + i]);
+        seed = seed * 1'664'525u + 1'013'904'223u + readValue;
+        checksum ^= seed ^ readValue;
+      }
+      advance();
+      break;
+    }
+    case OperationKind::WRITE: {
+      auto &chunk = current();
+      const std::size_t startByte = elementIdx * elemBytes;
+      for (std::size_t i = 0; i < elemBytes; ++i) {
+        const std::uint64_t writeValue = (seed + checksum) & 0xFFu;
+        chunk[startByte + i] = static_cast<char>(writeValue);
+        seed = seed * 1'664'525u + 1'013'904'223u + writeValue;
+        checksum ^= seed ^ writeValue;
+      }
+      advance();
+      break;
+    }
+    case OperationKind::INSERT: {
+      const auto insertValue = static_cast<char>((seed + checksum) & 0xFFu);
+      insert(insertValue);
+      seed = seed * 1'664'525u + 1'013'904'223u +
+             static_cast<unsigned char>(insertValue);
+      checksum ^= seed ^ static_cast<unsigned char>(insertValue);
+      break;
+    }
+    case OperationKind::ERASE: {
+      const std::uint64_t erasedValue =
+          static_cast<unsigned char>(current()[elementIdx * elemBytes]);
+      erase();
+      seed = seed * 1'664'525u + 1'013'904'223u + erasedValue;
+      checksum ^= seed ^ erasedValue;
+      break;
+    }
+    }
+  }
+};
+
 std::string_view dataStructureLabel(DataStructure value) {
   switch (value) {
   case DataStructure::ARRAY:
@@ -94,6 +220,8 @@ std::string_view dataStructureLabel(DataStructure value) {
     return "linked_list_sequential";
   case DataStructure::LINKED_LIST_RANDOM:
     return "linked_list_random";
+  case DataStructure::UNROLLED_LINKED_LIST:
+    return "unrolled_linked_list";
   }
   return "unknown";
 }
@@ -227,7 +355,23 @@ bool parseDataStructure(std::string_view text, DataStructure &value) {
     value = DataStructure::LINKED_LIST_RANDOM;
     return true;
   }
+  if (text == "unrolled_linked_list" || text == "UNROLLED_LINKED_LIST") {
+    value = DataStructure::UNROLLED_LINKED_LIST;
+    return true;
+  }
   return false;
+}
+
+void populateUnrolledLinkedList(std::list<std::vector<char>> &listData,
+                                std::size_t elementCount,
+                                std::size_t elemBytes,
+                                std::size_t unrolledMaxChunkSize) {
+  std::size_t remaining = elementCount;
+  while (remaining > 0) {
+    std::size_t currentChunkSize = std::min(remaining, unrolledMaxChunkSize);
+    listData.emplace_back(currentChunkSize * elemBytes);
+    remaining -= currentChunkSize;
+  }
 }
 
 template <typename StepFn>
@@ -268,10 +412,10 @@ void runBenchmark(std::string_view label, std::size_t elementCount,
 }
 
 int main(int argc, char **argv) {
-  if (argc != 5) {
+  if (argc != 5 && argc != 6) {
     std::cerr << "Usage: " << argv[0]
               << " <data-structure> <ins-del-percent> <element-size> "
-                 "<element-count>\n";
+                 "<element-count> [unrolled-max-chunk-size]\n";
     return 1;
   }
 
@@ -284,6 +428,8 @@ int main(int argc, char **argv) {
   const std::size_t insDelPercentValue = std::stoull(argv[2]);
   const std::size_t elemBytes = std::stoull(argv[3]);
   const std::size_t elementCountValue = std::stoull(argv[4]);
+  const std::size_t unrolledMaxChunkSize =
+      (argc == 6) ? std::stoull(argv[5]) : 64;
 
   // Seed the simple C RNG once for std::rand
   std::srand(static_cast<unsigned>(std::time(nullptr)));
@@ -306,17 +452,31 @@ int main(int argc, char **argv) {
     std::list<std::vector<char>> listData;
     if (dataStructure == DataStructure::LINKED_LIST_SEQUENTIAL) {
       populateSequentialLinkedList(listData, elementCountValue, elemBytes);
-    } else {
+    } else if (dataStructure == DataStructure::LINKED_LIST_RANDOM) {
       populateRandomLinkedList(listData, elementCountValue, elemBytes);
+    } else {
+      populateUnrolledLinkedList(listData, elementCountValue, elemBytes,
+                                 unrolledMaxChunkSize);
     }
 
     auto cursor = listData.begin();
-    runBenchmark(dataStructureLabel(dataStructure), elementCountValue,
-                 elemBytes, insDelPercentValue,
-                 [&](std::uint64_t &seed, std::uint64_t &checksum,
-                     OperationMix &mix) {
-                   ListAdapter adapter{listData, cursor, elemBytes};
-                   performStep(adapter, seed, checksum, mix);
-                 });
+    if (dataStructure == DataStructure::UNROLLED_LINKED_LIST) {
+      UnrolledListAdapter adapter{listData, cursor, elemBytes,
+                                  unrolledMaxChunkSize, 0};
+      runBenchmark(dataStructureLabel(dataStructure), elementCountValue,
+                   elemBytes, insDelPercentValue,
+                   [&](std::uint64_t &seed, std::uint64_t &checksum,
+                       OperationMix &mix) {
+                     adapter.step(seed, checksum, mix);
+                   });
+    } else {
+      runBenchmark(dataStructureLabel(dataStructure), elementCountValue,
+                   elemBytes, insDelPercentValue,
+                   [&](std::uint64_t &seed, std::uint64_t &checksum,
+                       OperationMix &mix) {
+                     ListAdapter adapter{listData, cursor, elemBytes};
+                     performStep(adapter, seed, checksum, mix);
+                   });
+    }
   }
 }
