@@ -10,16 +10,27 @@ from pathlib import Path
 MEMORY_LIMIT = 8 * 1024 * 1024 * 1024  # 8 GiB
 OUTPUT_FILE = Path("benchmark_results.csv")
 
-DATA_STRUCTURES = ["array", "linked_list_sequential", "linked_list_random"]
-INS_DEL_FRACTIONS = ["0", "1", "10", "50"]
-ELEMENT_SIZES = [("8B", 8), ("512B", 512), ("8MB", 8 * 1024 * 1024)]
-ELEMENT_COUNTS = [10, 1000, 100000, 10000000]
+# DATA_STRUCTURES = ["array", "linked_list_sequential", "linked_list_random", "unrolled_linked_list"]
+# INS_DEL_FRACTIONS = ["0", "1", "10", "50"]
+# ELEMENT_SIZES = [("8B", 8), ("512B", 512), ("8MB", 8 * 1024 * 1024)]
+# ELEMENT_COUNTS = [10, 1000, 100000, 10000000]
+
+DATA_STRUCTURES = ["unrolled_linked_list"]
+INS_DEL_FRACTIONS = ["0", "1"]
+ELEMENT_SIZES = [("8B", 8)]
+ELEMENT_COUNTS = [10, 1000]
+
+SCRIPT_DIR = Path(__file__).resolve().parent
 
 def benchmark_executable() -> Path:
-    exe = Path("containerBenchmark.exe") if os.name == "nt" else Path("containerBenchmark")
-    if not exe.exists():
-        raise FileNotFoundError(f"Benchmark executable not found: {exe}. Benchmark executable but be at same directory as this script.")
-    return exe
+    for exe in SCRIPT_DIR.glob("containerBenchmark*"):
+        if exe.is_file() and os.access(exe, os.X_OK):
+            return exe
+
+    raise FileNotFoundError(
+        f"Benchmark executable not found in {SCRIPT_DIR}. "
+        "Place the executable in the same directory as this script and name it containerBenchmark."
+    )
 
 def estimated_bytes(ds: str, elem_bytes: int, count: int) -> int:
     overhead = 64 if ds == "array" else 96
