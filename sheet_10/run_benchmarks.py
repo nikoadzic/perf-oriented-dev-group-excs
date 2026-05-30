@@ -62,7 +62,7 @@ def main() -> int:
                             continue
 
                         result = subprocess.run(
-                            [str(exe), ds, ins_del, size_label, str(count), pattern],
+                            [str(exe), ds, ins_del, str(elem_bytes), str(count), pattern],
                             check=True,
                             capture_output=True,
                             text=True,
