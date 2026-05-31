@@ -81,7 +81,68 @@ The data structure was tuned using chunk sizes between 8 and 2048 elements to fi
 
 In the final comparison the Tiered Array shows a performance trade-off. For pure sequential access it is slower than the sequentially allocated linked list because the two-layer indirection and chunk boundary checks introduce more overhead than simple pointer increments. However it significantly outperforms the randomly allocated linked list which represents a more realistic fragmented heap. Furthermore while the performance of the baseline Array collapses to near zero during 50\% insertion workloads at large $N$ the Tiered Array maintains a high and stable throughput. At the 8 MB payload scale the performance is again limited by memory bandwidth and all structures converge to the same result.
 
+\newpage
 \section{Extended Benchmarking}
+The benchmark was extended to include random access patterns.
+To simplify implementation, for each data structure an adapter was added, which specified the needed function calls for each data structure. 
+\\
+The patterns were pre-generated before the benchmark to not impact performance.
+\\\\
+The general benchamark settings were:
+\begin{enumerate}
+    \item Maximim RAM usage of $8$GB
+    \item The chunk/batch size for running operations: 256
+    \item Chunk size for data structures from a) and b)
+    \item $2s$ warmup time per benchmark
+    \item $5s$ runtime per benchmark
+\end{enumerate}
+
+\noindent
+For the local benchmark, the following machine was used:
+\begin{enumerate}
+    \item AMD Ryzen 5 7600X
+    \begin{enumerate}
+        \item 6 Cores
+        \item L1 384 KB
+        \item L2 6 MB
+        \item L3 32 MB
+    \end{enumerate}
+    \item 32GB DDR5 6000 mhz
+\end{enumerate}
+
+\begin{figure}[p]
+    \centering
+     \includegraphics[width=\linewidth]{../benchmark_plot_lcc3.png}
+    \vspace{0.3cm}
+    \caption{Benchmark Results LCC3}
+\end{figure}
+
+\begin{figure}[p]
+    \centering
+     \includegraphics[width=\linewidth]{../benchmark_plot_local.png}
+    \vspace{0.3cm}
+    \caption{Benchmark Results Local}
+\end{figure}
+
+\noindent
+When looking at the plots, one can observe the expected performance impact of random access patterns.
+\\
+Across all tested data structures, random access generally results in lower throughput than sequential access. 
+This behaviour is to be expected because of CPU memory hierarchies. 
+Sequential benefits from cache locality and hardware prefetching, but random access causes more cache misses and/or stalls.
+\\
+There is one exception however because arrays with very large numbers of elements, see better performance with random access. 
+A possible explanation lies in the benchmark implementation. 
+Under sequential access patterns, these shifts may affect a larger portion of the array on average, and this overhead could be the reason for worse performance than the randomly accessed array.
+\\
+For all other data structures, the performance gap between sequential and random access becomes increasingly pronounced as the number of stored elements grows. 
+This is also to be expected because with growing number of elements, the chance of cache misses increases even more.
+\\
+In contrast, increasing the element size has a comparatively small to no influence on the relative difference between sequential and random access.
+\\
+Another observation is that data structures with contiguous memory layouts, meaning the array and the tiered arrays, benefit more from sequential access than linked-list-based structures. 
+This is again to be expected because contiguous storage allows the processor to exploit spatial locality and cache prefetching more effectively.
+
 
 % Copied form earlier exercise to display many plots
 % \begin{figure}[H]
@@ -125,7 +186,7 @@ In the final comparison the Tiered Array shows a performance trade-off. For pure
 %     \caption{Performance comparision}
 % \end{figure}
 
-\end{document}e}
+\end{document}
 
 
 \end{document}
