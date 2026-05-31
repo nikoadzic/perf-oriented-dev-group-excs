@@ -2,11 +2,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
 def main():
     try:
-        df = pd.read_csv("benchmark_results.csv", comment="#")
+        df = pd.read_csv("benchmark_results_local.csv", comment="#")
     except FileNotFoundError:
-        print("Error: benchmark_results.csv not found. Benchmark results must be in the same folder as this script.")
+        print(
+            "Error: benchmark_results.csv not found. Benchmark results must be in the same folder as this script."
+        )
         return
 
     # Create combined label for legend
@@ -17,13 +20,13 @@ def main():
         data=df,
         x="elements",
         y="ops_per_second",
-        hue="Configuration",
-        col="ins_del_percent",
-        row="bytes",
+        hue="label",  # Container Type
+        style="access_pattern",  # Line style (Solid vs Dashed)
+        col="bytes",
+        row="ins_del_percent",
         kind="line",
         markers=True,
-        dashes=False,
-        facet_kws={'margin_titles': True}
+        facet_kws={"margin_titles": True, "sharey": False},
     )
 
     # Set log scales for both axes and add grid
@@ -32,10 +35,13 @@ def main():
         ax.grid(True, which="major", alpha=0.3)
 
     g.set_axis_labels("Number of Elements", "Operations per Second")
-    g.set_titles(col_template="Ins/Del: {col_name}%", row_template="Size: {row_name} bytes")
+    g.set_titles(
+        col_template="Size: {col_name}bytes", row_template="Ins/Del: {row_name} %"
+    )
 
-    plt.savefig("benchmark_plot.png")
+    plt.savefig("benchmark_plot_local.png")
     print("Plot saved to benchmark_plot.png")
+
 
 if __name__ == "__main__":
     main()

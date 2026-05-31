@@ -644,11 +644,13 @@ void populateRandomLinkedList(std::list<std::vector<char>> &listData,
   std::mt19937 rng(static_cast<unsigned>(std::rand()));
   std::shuffle(allocationOrder.begin(), allocationOrder.end(), rng);
 
+  // Allocate node on the heap in randomized order and store logical iterator location
   for (std::size_t logicalIndex : allocationOrder) {
     nodes[logicalIndex] =
         allocationList.emplace(allocationList.end(), elemBytes);
   }
 
+  // Relink nodes into correct logical sequence but keep memory adresses
   for (std::size_t logicalIndex = 0; logicalIndex < elementCount;
        ++logicalIndex) {
     listData.splice(listData.end(), allocationList, nodes[logicalIndex]);
