@@ -10,22 +10,17 @@ from pathlib import Path
 MEMORY_LIMIT = 8 * 1024 * 1024 * 1024  # 8 GiB
 OUTPUT_FILE = Path("benchmark_results.csv")
 
-# DATA_STRUCTURES = ["array", "linked_list_sequential", "linked_list_random", "unrolled_linked_list"]
-# INS_DEL_FRACTIONS = ["0", "1", "10", "50"]
-# ELEMENT_SIZES = [("8B", 8), ("512B", 512), ("8MB", 8 * 1024 * 1024)]
-# ELEMENT_COUNTS = [10, 1000, 100000, 10000000]
-# ACCESS_PATTERN = ["SEQ", "RAND"]
-
-DATA_STRUCTURES = ["unrolled_linked_list"]
-INS_DEL_FRACTIONS = ["1"]
-ELEMENT_SIZES = [("8B", 8)]
-ELEMENT_COUNTS = [1000]
+DATA_STRUCTURES = ["array", "linked_list_sequential", "linked_list_random", "unrolled_linked_list", "tiered_array"]
+INS_DEL_FRACTIONS = ["0", "1", "10", "50"]
+ELEMENT_COUNTS = [10, 1000, 100000, 10000000]
+ELEMENT_SIZES = [("8B", 8), ("512B", 512), ("8MB", 8 * 1024 * 1024)]
 ACCESS_PATTERN = ["SEQ", "RAND"]
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 def benchmark_executable() -> Path:
-    for exe in SCRIPT_DIR.glob("containerBenchmark*"):
+    for name in ["containerBenchmark.exe", "containerBenchmark"]:
+        exe = SCRIPT_DIR / name
         if exe.is_file() and os.access(exe, os.X_OK):
             return exe
 
