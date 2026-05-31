@@ -62,8 +62,10 @@ bool parseAccessPattern(std::string_view text, AccessPattern &value) {
 }
 
 struct RandomPositionStream {
+  // Create buffer that fits in chache but large enough to not be predictable
   static constexpr std::size_t bufferSize = 1u << 16;
 
+  // Pre-Generate random positions
   RandomPositionStream()
       : positions(bufferSize),
         rng(static_cast<std::mt19937_64::result_type>(std::rand())) {
@@ -72,6 +74,7 @@ struct RandomPositionStream {
     }
   }
 
+  // Return next random position
   std::size_t next(std::size_t currentSize) {
     if (currentSize == 0) {
       return 0;
@@ -79,6 +82,8 @@ struct RandomPositionStream {
 
     const std::size_t position =
         static_cast<std::size_t>(positions[index] % currentSize);
+      
+    // Advance index using circular buffer
     index = (index + 1 == positions.size()) ? 0 : index + 1;
     return position;
   }
