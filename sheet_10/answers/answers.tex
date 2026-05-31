@@ -8,6 +8,7 @@
 \usepackage{subcaption}
 \usepackage[hidelinks]{hyperref}
 \usepackage{listings}
+\usepackage{float}
 
 \newcommand{\Abgabe}{10}
 \title{Exercise \Abgabe}
@@ -32,13 +33,13 @@ is avoided, as only the small vector headers need to be shifted in memory. For t
 a \verb|std::list<std::vector<char>>| was used. This structure provides the L1 cache locality of vectors, while allowing
 the linked list to handle chunk splitting when a chunk exceeds its capacity. \\
 
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
      \includegraphics[width=\linewidth]{../A/img/unrolled_tuning_3plots.png}
     \vspace{0.3cm}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
      \includegraphics[width=\linewidth]{../A/img/benchmark_plot_16.png}
     \vspace{0.3cm}
@@ -62,11 +63,28 @@ the expected structural efficiencies of a data container.
 
 \section{Tiered Arrays}
 
+The Tiered Array was implemented as a two-layer structure using a \verb|std::vector| of \verb|std::vector<char>| chunks. Similar to the baseline described in Section 1, this approach avoids large memory copies during insertions by limiting shifting operations to a single chunk. When a chunk exceeds its maximum capacity it is split into two halves and a new entry is added to the outer index vector. 
+
+\begin{figure}[H]
+    \centering
+     \includegraphics[width=\linewidth]{../B/img/tiered_tuning_3plots.png}
+    \vspace{0.3cm}
+\end{figure}
+
+The data structure was tuned using chunk sizes between 8 and 2048 elements to find the most efficient configuration. The results show that a chunk size of 256 elements offers the best performance balance. Smaller sizes increase the overhead of the outer indirection layer while larger sizes lead to performance degradation during insertions as the chunks begin to behave like standard arrays.
+
+\begin{figure}[H]
+    \centering
+     \includegraphics[width=\linewidth]{../B/img/comparison_plot.png}
+    \vspace{0.3cm}
+\end{figure}
+
+In the final comparison the Tiered Array shows a performance trade-off. For pure sequential access it is slower than the sequentially allocated linked list because the two-layer indirection and chunk boundary checks introduce more overhead than simple pointer increments. However it significantly outperforms the randomly allocated linked list which represents a more realistic fragmented heap. Furthermore while the performance of the baseline Array collapses to near zero during 50\% insertion workloads at large $N$ the Tiered Array maintains a high and stable throughput. At the 8 MB payload scale the performance is again limited by memory bandwidth and all structures converge to the same result.
+
 \section{Extended Benchmarking}
 
-
 % Copied form earlier exercise to display many plots
-% \begin{figure}[h]
+% \begin{figure}[H]
 %     \centering
 % 
 %     % Row 1
@@ -106,6 +124,8 @@ the expected structural efficiencies of a data container.
 % 
 %     \caption{Performance comparision}
 % \end{figure}
+
+\end{document}e}
 
 
 \end{document}
