@@ -7,3 +7,6 @@ sheet_10/answers/answers.aux
 sheet_10/answers/answers.fdb_latexmk
 sheet_10/answers/answers.fls
 sheet_10/containerBenchmark.exe
+sheet_12/lua-5.5.0/src/luac
+sheet_12/lua-5.5.0/src/lua
+sheet_12/lua-5.5.0/src/liblua.a
