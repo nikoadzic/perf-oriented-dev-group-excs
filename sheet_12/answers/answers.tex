@@ -34,9 +34,49 @@ LCC3 fib.lua results:
 The median of averages from 20 runs was 13.7609 s
 
 \section{Profiling}
+Initially, only the benchmark was profiled using profile.lua (\url{https://github.com/2dengine/profile.lua}). This however only shows a profile of the functions, making it unusable for optimizations on the lua interpreter itself. 
+\\
+After that, \texttt{perf} was used. The results were more informative:
 
+\begin{verbatim}
+[...]
+# Samples: 116K of event 'cycles:u'
+# Event count (approx.): 114068069768
+#
+# Children      Self  Command  Shared Object     Symbol                
+# ........  ........  .......  ................  ......................
+#
+    79.12%    78.18%  lua      lua               [.] luaV_execute
+            |          
+            |--14.88%--0
+            |          |          
+            |           --14.61%--luaV_execute
+            |          
+            |--7.37%--0x281c900060080
+            |          luaV_execute
+[...]
+\end{verbatim}
+
+Additionally, manual counting of OPs was included to see, which OPs were called the most:
+
+\begin{verbatim}
+--- Opcode Statistics ---
+EQI            : 310000031
+LTI            : 271946237
+GETTABUP       : 135973068
+ADD            : 135973068
+MOVE           : 35000103
+LOADI          : 25000001
+CLOSURE        : 10000001
+VARARGPREP     : 4
+SETTABUP       : 3
+--------------------------
+\end{verbatim}
 
 \section{Code Understanding}
+As seen on the \texttt{perf} report, the interpreter spends a lot of time in \texttt{luaV\_execute}. Inside that is a large switch statement which checks against different OP\_IDs to determine what to do next. As expected, this takes a lot of time and is inefficient.
+\\
+\texttt{LUA\_USE\_JUMPTABLE} helps with that by enabling direct-threaded dispatch in the virtual machine using GCC/Clang computed gotos. This replaces the large switch statement, thus increasing performance.
 
 \section{Optimization}
 Applying heuristics to OP\_ADD resulted in ~1.4\% performance increase
