@@ -27,10 +27,11 @@
 \section{Setup and Basic Execution}
 LCC3 fib.lua results:
 \begin{verbatim}
-    100 x fibonacci_naive(30)     time:  17.0187 s  --  832040
-    10000000 x fibonacci_tail(30) time:  12.8821 s  --  832040
-    25000000 x fibonacci_iter(30) time:  11.0248 s  --  832040
+100 x fibonacci_naive(30)     time:  13.7866 s  --  832040
+10000000 x fibonacci_tail(30) time:  15.8393 s  --  832040
+25000000 x fibonacci_iter(30) time:  12.2847 s  --  832040
 \end{verbatim}
+The median of averages from 20 runs was 13.7609 s
 
 \section{Profiling}
 
@@ -38,7 +39,8 @@ LCC3 fib.lua results:
 \section{Code Understanding}
 
 \section{Optimization}
-
+Applying heuristics to OP\_ADD resulted in ~1.4\% performance increase
+Using all optimizations above and -fprofile-generate + -fprofile-use resulted in ~9.6\% performance increase
 
 % Copied form earlier exercise to display many plots
 % \begin{figure}[H]

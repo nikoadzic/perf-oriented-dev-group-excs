@@ -1504,7 +1504,17 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         vmbreak;
       }
       vmcase(OP_ADD) {
-        op_arith(L, l_addi, luai_numadd);
+        TValue *v1 = vRB(i);
+        TValue *v2 = vRC(i);
+        // Apply heuristic of ints
+        if (ttisinteger(v1) && ttisinteger(v2)) {
+          lua_Integer i1 = ivalue(v1);
+          lua_Integer i2 = ivalue(v2);
+          setivalue(s2v(RA(i)), intop(+, i1, i2));
+          pc++; /* skip following MMBIN */
+          vmbreak;
+        }
+        op_arith(L, l_addi, luai_numadd); /* fallback for non ints */
         vmbreak;
       }
       vmcase(OP_SUB) {
