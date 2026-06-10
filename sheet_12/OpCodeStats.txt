@@ -1,0 +1,11 @@
+--- Opcode Statistics ---
+EQI            : 310000031
+LTI            : 271946237
+GETTABUP       : 135973068
+ADD            : 135973068
+MOVE           : 35000103
+LOADI          : 25000001
+CLOSURE        : 10000001
+VARARGPREP     : 4
+SETTABUP       : 3
+--------------------------

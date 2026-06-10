@@ -1,0 +1,590 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 116K of event 'cycles:u'
+# Event count (approx.): 114068069768
+#
+# Children      Self  Command  Shared Object     Symbol                
+# ........  ........  .......  ................  ......................
+#
+    79.12%    78.18%  lua      lua               [.] luaV_execute
+            |          
+            |--14.88%--0
+            |          |          
+            |           --14.61%--luaV_execute
+            |          
+            |--7.37%--0x281c900060080
+            |          luaV_execute
+            |          
+            |--5.80%--0x200c8000281c9
+            |          luaV_execute
+            |          
+            |--5.28%--0x101c7
+            |          luaV_execute
+            |          
+            |--4.73%--0x7e0001150000008b
+            |          luaV_execute
+            |          
+            |--3.57%--0x201032200020280
+            |          luaV_execute
+            |          
+            |--3.55%--0x20100a202020144
+            |          |          
+            |           --3.44%--luaV_execute
+            |          
+            |--3.00%--0x10b020200c4
+            |          |          
+            |           --2.88%--luaV_execute
+            |          
+            |--2.98%--0x100c7
+            |          luaV_execute
+            |          
+            |--2.94%--0x7e00021500000189
+            |          luaV_execute
+            |          
+            |--2.52%--0x100c7000200c8
+            |          |          
+            |           --2.29%--luaV_execute
+            |          
+            |--2.41%--0x20201440781002f
+            |          |          
+            |           --2.19%--luaV_execute
+            |          
+            |--2.34%--0x60080060200ae
+            |          |          
+            |           --2.32%--luaV_execute
+            |          
+            |--2.32%--0x20200c40780002f
+            |          luaV_execute
+            |          
+            |--2.21%--0x101c7000001c6
+            |          luaV_execute
+            |          
+            |--1.60%--0x1c6000401c5
+            |          luaV_execute
+            |          
+            |--1.59%--0x60200ae02010322
+            |          luaV_execute
+            |          
+            |--1.28%--0x101c7000200c8
+            |          luaV_execute
+            |          
+            |--0.94%--luaV_execute
+            |          
+            |--0.72%--0x7d0001950000010b
+            |          luaV_execute
+            |          
+            |--0.71%--0x60200ae02010122
+            |          luaV_execute
+            |          
+            |--0.69%--0x28b000282c9
+            |          |          
+            |           --0.64%--luaV_execute
+            |          
+            |--0.67%--0x105028e0000028b
+            |          |          
+            |           --0.60%--luaV_execute
+            |          
+            |--0.64%--0x30502a3020102c4
+            |          luaV_execute
+            |          
+            |--0.64%--0x60200ae020100a2
+            |          luaV_execute
+            |          
+            |--0.56%--0x201012200020300
+            |          luaV_execute
+            |          
+            |--0.56%--0x201ca80000281
+            |          luaV_execute
+            |          
+             --0.53%--0x401c5060200ae
+                       luaV_execute
+
+    16.09%     0.00%  lua      [unknown]         [k] 0000000000000000
+            |
+            ---0
+               |          
+               |--14.88%--luaV_execute
+               |          
+                --1.04%--luaD_pretailcall
+
+     9.02%     8.77%  lua      lua               [.] luaD_pretailcall
+            |          
+            |--7.71%--0x10408
+            |          luaD_pretailcall
+            |          
+             --1.06%--0
+                       |          
+                        --0.79%--luaD_pretailcall
+
+     8.57%     0.00%  lua      [unknown]         [.] 0x0000000000010408
+            |
+            ---0x10408
+               |          
+               |--7.71%--luaD_pretailcall
+               |          
+                --0.56%--freeobj
+
+     7.37%     0.00%  lua      [unknown]         [.] 0x000281c900060080
+            |
+            ---0x281c900060080
+               luaV_execute
+
+     5.80%     0.00%  lua      [unknown]         [.] 0x000200c8000281c9
+            |
+            ---0x200c8000281c9
+               luaV_execute
+
+     5.49%     0.00%  lua      [unknown]         [.] 0x020100a202020144
+            |
+            ---0x20100a202020144
+               |          
+               |--3.55%--luaV_execute
+               |          
+                --1.94%--luaH_getshortstr
+
+     5.46%     4.94%  lua      lua               [.] luaD_precall
+            |          
+            |--2.84%--luaD_precall
+            |          
+            |--1.24%--0x100c7000200c8
+            |          |          
+            |           --1.07%--luaD_precall
+            |          
+             --1.11%--0x20201440781002f
+                       |          
+                        --0.97%--luaD_precall
+
+     5.28%     0.00%  lua      [unknown]         [.] 0x00000000000101c7
+            |
+            ---0x101c7
+               luaV_execute
+
+     4.99%     0.00%  lua      [unknown]         [.] 0x0000010b020200c4
+            |
+            ---0x10b020200c4
+               |          
+               |--3.00%--luaV_execute
+               |          
+                --1.99%--luaH_getshortstr
+
+     4.73%     0.00%  lua      [unknown]         [.] 0x7e0001150000008b
+            |
+            ---0x7e0001150000008b
+               luaV_execute
+
+     4.15%     3.93%  lua      lua               [.] luaH_getshortstr
+            |          
+            |--1.99%--0x10b020200c4
+            |          |          
+            |           --1.87%--luaH_getshortstr
+            |          
+             --1.94%--0x20100a202020144
+                       |          
+                        --1.83%--luaH_getshortstr
+
+     3.76%     0.00%  lua      [unknown]         [.] 0x000100c7000200c8
+            |
+            ---0x100c7000200c8
+               |          
+               |--2.46%--luaV_execute
+               |          
+                --1.30%--luaD_precall
+
+     3.57%     0.00%  lua      [unknown]         [.] 0x0201032200020280
+            |
+            ---0x201032200020280
+               luaV_execute
+
+     3.52%     0.00%  lua      [unknown]         [.] 0x020201440781002f
+            |
+            ---0x20201440781002f
+               |          
+               |--2.32%--luaV_execute
+               |          
+                --1.20%--luaD_precall
+
+     2.98%     0.00%  lua      [unknown]         [.] 0x00000000000100c7
+            |
+            ---0x100c7
+               luaV_execute
+
+     2.94%     0.00%  lua      [unknown]         [.] 0x7e00021500000189
+            |
+            ---0x7e00021500000189
+               luaV_execute
+
+     2.40%     0.00%  lua      [unknown]         [.] 0x00060080060200ae
+            |
+            ---0x60080060200ae
+               |          
+                --2.34%--luaV_execute
+
+     2.32%     0.00%  lua      [unknown]         [.] 0x020200c40780002f
+            |
+            ---0x20200c40780002f
+               luaV_execute
+
+     2.21%     0.00%  lua      [unknown]         [.] 0x000101c7000001c6
+            |
+            ---0x101c7000001c6
+               luaV_execute
+
+     1.60%     0.00%  lua      [unknown]         [.] 0x000001c6000401c5
+            |
+            ---0x1c6000401c5
+               luaV_execute
+
+     1.59%     0.00%  lua      [unknown]         [.] 0x060200ae02010322
+            |
+            ---0x60200ae02010322
+               luaV_execute
+
+     1.28%     0.00%  lua      [unknown]         [.] 0x000101c7000200c8
+            |
+            ---0x101c7000200c8
+               luaV_execute
+
+     1.12%     0.00%  lua      [unknown]         [.] 0x0000028b000282c9
+            |
+            ---0x28b000282c9
+               |          
+                --0.70%--luaV_execute
+
+     0.94%     0.00%  lua      [unknown]         [.] 0x0105028e0000028b
+            |
+            ---0x105028e0000028b
+               |          
+                --0.63%--luaV_execute
+
+     0.78%     0.72%  lua      lua               [.] luaT_getvarargs
+     0.72%     0.00%  lua      [unknown]         [.] 0x7d0001950000010b
+            |
+            ---0x7d0001950000010b
+               luaV_execute
+
+     0.71%     0.00%  lua      [unknown]         [.] 0x060200ae02010122
+            |
+            ---0x60200ae02010122
+               luaV_execute
+
+     0.64%     0.00%  lua      [unknown]         [.] 0x030502a3020102c4
+            |
+            ---0x30502a3020102c4
+               luaV_execute
+
+     0.64%     0.00%  lua      [unknown]         [.] 0x060200ae020100a2
+            |
+            ---0x60200ae020100a2
+               luaV_execute
+
+     0.58%     0.56%  lua      lua               [.] freeobj
+            |          
+             --0.56%--0x10408
+                       |          
+                        --0.55%--freeobj
+
+     0.56%     0.00%  lua      [unknown]         [.] 0x0201012200020300
+            |
+            ---0x201012200020300
+               luaV_execute
+
+     0.56%     0.00%  lua      [unknown]         [.] 0x000201ca80000281
+            |
+            ---0x201ca80000281
+               luaV_execute
+
+     0.55%     0.54%  lua      libc-2.28.so      [.] _int_free
+            |          
+             --0.52%--_int_free
+
+     0.53%     0.00%  lua      [unknown]         [.] 0x000401c5060200ae
+            |
+            ---0x401c5060200ae
+               luaV_execute
+
+     0.42%     0.00%  lua      [unknown]         [.] 0x000282c900080200
+     0.36%     0.34%  lua      libc-2.28.so      [.] malloc
+     0.35%     0.00%  lua      [unknown]         [.] 0x0000000000000003
+     0.28%     0.00%  lua      [unknown]         [.] 0x800002817fff8201
+     0.27%     0.21%  lua      lua               [.] luaC_newobjdt
+     0.23%     0.20%  lua      lua               [.] luaM_free_
+     0.22%     0.00%  lua      [unknown]         [.] 0x0781002f7d000195
+     0.22%     0.22%  lua      libc-2.28.so      [.] _int_malloc
+     0.21%     0.00%  lua      [unknown]         [.] 0x000200c8060200ae
+     0.21%     0.00%  lua      [unknown]         [.] 0x020102c40105028e
+     0.20%     0.11%  lua      lua               [.] luaL_alloc
+     0.20%     0.15%  lua      lua               [.] luaM_malloc_
+     0.19%     0.17%  lua      lua               [.] sweepgen
+     0.18%     0.17%  lua      libc-2.28.so      [.] realloc
+     0.17%     0.15%  lua      lua               [.] luaV_tointeger
+     0.15%     0.00%  lua      [unknown]         [.] 0x0004814580000281
+     0.14%     0.12%  lua      libc-2.28.so      [.] cfree@GLIBC_2.2.5
+     0.14%     0.00%  lua      [unknown]         [.] 0x8000028100000200
+     0.14%     0.00%  lua      [unknown]         [.] 0x00020300000201ca
+     0.13%     0.00%  lua      [unknown]         [.] 0x0000000004002405
+     0.13%     0.00%  lua      [unknown]         [.] 0x2e78086505002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x0000000003002405
+     0.13%     0.00%  lua      [unknown]         [.] 0xbe436a2f06002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xbe2e947306002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xbf5a969204002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xbf5139e204002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xb3a7c12304002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xbe62d3cf06002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x0e4b1dfc09002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x2c52c7c805002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x04f541c30b002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xd8fe16360e002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x00000000013f2405
+     0.13%     0.00%  lua      [unknown]         [.] 0x64b9a56a13002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xeb54563a07002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xd99c462903002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x6861787308002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x0000000000012406
+     0.13%     0.00%  lua      [unknown]         [.] 0x000000050100240a
+     0.13%     0.00%  lua      [unknown]         [.] 0x02e3070c0f002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x000000040001240a
+     0.13%     0.00%  lua      [unknown]         [.] 0xf6c8968f01002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xd51d28390e002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x000000060001240a
+     0.13%     0.00%  lua      [unknown]         [.] 0x2c251fd805002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x000000070003240a
+     0.13%     0.00%  lua      [unknown]         [.] 0xf6c8968e01002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xf6c8969a01002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xf6c8969b01002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x9540a5960e002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x000000070001240a
+     0.13%     0.00%  lua      [unknown]         [.] 0xf6c8968201002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x19c070660b002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x1fc9897a07002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x0000000a0102240a
+     0.13%     0.00%  lua      [unknown]         [.] 0xbf55cf0f04002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xf6c8968701002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xcf7e26860e002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xa8b3407705002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xd982660703002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xf6c896f501002404
+     0.13%     0.00%  lua      [unknown]         [.] 0xf6c896f701002404
+     0.13%     0.00%  lua      [unknown]         [.] 0x2597b2e4ff012414
+     0.13%     0.00%  lua      [unknown]         [.] 0x4e31971aff012414
+     0.13%     0.00%  lua      [unknown]         [.] 0xa6360912ff012414
+     0.13%     0.00%  lua      [unknown]         [.] 0x0000000000002409
+     0.13%     0.00%  lua      [unknown]         [.] 0x0000000000002406
+     0.13%     0.00%  lua      [unknown]         [.] 0x000014e8d8012406
+     0.12%     0.00%  lua      [unknown]         [.] 0x91ad594f06002404
+     0.11%     0.00%  lua      [unknown]         [.] 0xbf59261e04002404
+     0.11%     0.00%  lua      [unknown]         [.] 0xb5b9e12408002404
+     0.11%     0.10%  lua      lua               [.] luaF_closeupval
+     0.11%     0.00%  lua      [unknown]         [.] 0xd9bbcf0503002404
+     0.11%     0.00%  lua      [unknown]         [.] 0x2c25d8ed05002404
+     0.11%     0.00%  lua      [unknown]         [.] 0x000202800780002f
+     0.11%     0.00%  lua      [unknown]         [k] 0xfffe7640e9ce8948
+     0.11%     0.00%  lua      [unknown]         [.] 0xd99c3bdd03002404
+     0.11%     0.00%  lua      [unknown]         [.] 0x4e491d6807002404
+     0.10%     0.00%  lua      [unknown]         [.] 0x2c24a84f05002404
+     0.10%     0.00%  lua      [unknown]         [.] 0x2d46455905002404
+     0.10%     0.00%  lua      [unknown]         [.] 0xbf5dcb4804002404
+     0.10%     0.00%  lua      [unknown]         [.] 0xd99c201c03002404
+     0.10%     0.00%  lua      [unknown]         [.] 0xbe465a9c06002404
+     0.10%     0.00%  lua      [unknown]         [.] 0x919b41de06002404
+     0.10%     0.00%  lua      [unknown]         [.] 0xbf5461d704002404
+     0.10%     0.00%  lua      [unknown]         [.] 0xbf5a739004002404
+     0.10%     0.10%  lua      lua               [.] propagatemark
+     0.10%     0.00%  lua      [unknown]         [.] 0xbf5aa33804002404
+     0.10%     0.00%  lua      [unknown]         [.] 0xbf542b2304002404
+     0.09%     0.00%  lua      [unknown]         [.] 0x67cef13206002404
+     0.09%     0.00%  lua      [unknown]         [.] 0x0000000005002405
+     0.09%     0.00%  lua      [unknown]         [.] 0xbf5afba204002404
+     0.09%     0.00%  lua      [unknown]         [.] 0xd9cf8e3207002404
+     0.09%     0.00%  lua      [unknown]         [.] 0x0008020002000444
+     0.09%     0.00%  lua      [unknown]         [.] 0x63e0220e06002404
+     0.09%     0.00%  lua      [unknown]         [.] 0x02fc608f09002404
+     0.09%     0.00%  lua      [unknown]         [.] 0xc6ceb3a606002404
+     0.09%     0.00%  lua      [unknown]         [.] 0x637ac17406002404
+     0.08%     0.00%  lua      lua               [.] laction
+     0.08%     0.00%  lua      [unknown]         [.] 0x573f465507002404
+     0.08%     0.00%  lua      [unknown]         [.] 0xbf521f7104002404
+     0.08%     0.00%  lua      [unknown]         [.] 0xbf5a819804002404
+     0.08%     0.00%  lua      [unknown]         [.] 0x0f54d95308002404
+     0.08%     0.08%  lua      lua               [.] luaS_clearcache
+     0.08%     0.06%  lua      lua               [.] luaF_findupval
+     0.08%     0.00%  lua      [unknown]         [.] 0x2caadcb305002404
+     0.08%     0.00%  lua      [unknown]         [.] 0x0000000000012426
+     0.08%     0.00%  lua      [unknown]         [.] 0xe00c5d8302002404
+     0.07%     0.02%  lua      lua               [.] free@plt
+     0.07%     0.00%  lua      [unknown]         [.] 0x0000000000002407
+     0.07%     0.06%  lua      lua               [.] luaF_newLclosure
+     0.07%     0.00%  lua      [unknown]         [.] 0x0000000000001009
+     0.07%     0.00%  lua      [unknown]         [.] 0x0000000000011006
+     0.07%     0.00%  lua      [unknown]         [.] 0x0000000001068150
+     0.07%     0.00%  lua      [unknown]         [.] 0x806b31330a002404
+     0.07%     0.00%  lua      [unknown]         [.] 0x806a72e20a002404
+     0.07%     0.00%  lua      [unknown]         [.] 0x0000000000011106
+     0.07%     0.00%  lua      [unknown]         [.] 0x0000000000011109
+     0.06%     0.00%  lua      [unknown]         [.] 0x0000000000010806
+     0.06%     0.00%  lua      [unknown]         [.] 0xe00c5cf902002404
+     0.06%     0.00%  lua      [unknown]         [.] 0xb068269304002404
+     0.06%     0.00%  lua      [unknown]         [.] 0x0000000000000809
+     0.06%     0.00%  lua      [unknown]         [.] 0x0000000000010906
+     0.06%     0.00%  lua      [unknown]         [.] 0x0000000000010909
+     0.06%     0.00%  lua      [unknown]         [.] 0xab3c9a4e06002404
+     0.06%     0.00%  lua      [unknown]         [.] 0x579f2cf50a002404
+     0.06%     0.00%  lua      [unknown]         [.] 0x0000000000011009
+     0.06%     0.00%  lua      [unknown]         [.] 0x0000000000010809
+     0.06%     0.00%  lua      [unknown]         [.] 0xbf5139a004002404
+     0.06%     0.00%  lua      [unknown]         [.] 0xd99c208b03002404
+     0.05%     0.00%  lua      [unknown]         [.] 0xd99c492a03002404
+     0.05%     0.00%  lua      [unknown]         [.] 0xd99c219e03002404
+     0.05%     0.00%  lua      [unknown]         [.] 0x0000814600048145
+     0.05%     0.00%  lua      [unknown]         [.] 0x0000000000018146
+     0.05%     0.00%  lua      [unknown]         [.] 0xd99c219803002404
+     0.05%     0.00%  lua      [unknown]         [.] 0xbf5a588404002404
+     0.05%     0.00%  lua      [unknown]         [.] 0xd99c46ae03002404
+     0.05%     0.00%  lua      [unknown]         [.] 0xd982674203002404
+     0.04%     0.00%  lua      [unknown]         [.] 0xd982150e03002404
+     0.04%     0.00%  lua      [unknown]         [.] 0x2cc4c1ab05002404
+     0.04%     0.00%  lua      [unknown]         [.] 0xbf5a077c04002404
+     0.04%     0.00%  lua      [unknown]         [.] 0x2cc4d47805002404
+     0.04%     0.00%  lua      [unknown]         [.] 0xbecc4b6809002404
+     0.04%     0.00%  lua      [unknown]         [.] 0x2c99e1d105002404
+     0.03%     0.01%  lua      lua               [.] realloc@plt
+     0.03%     0.02%  lua      lua               [.] luaC_newobj
+     0.03%     0.00%  lua      [unknown]         [.] 0xbf56464f04002404
+     0.03%     0.00%  lua      [unknown]         [.] 0xd98266bf03002404
+     0.03%     0.00%  lua      [unknown]         [.] 0xd99c45fe03002404
+     0.03%     0.00%  lua      [unknown]         [.] 0xd99c2b9403002404
+     0.03%     0.00%  lua      [unknown]         [.] 0x0001814600008146
+     0.02%     0.00%  lua      [unknown]         [.] 0xbf5f304d04002404
+     0.02%     0.00%  lua      [unknown]         [.] 0xbf5f8fed04002404
+     0.02%     0.01%  lua      lua               [.] atomic
+     0.02%     0.00%  lua      [unknown]         [.] 0xd982188e03002404
+     0.02%     0.00%  lua      [unknown]         [.] 0xbf55c3b304002404
+     0.02%     0.01%  lua      lua               [.] luaC_step
+     0.01%     0.00%  lua      [unknown]         [.] 0xbf58173804002404
+     0.01%     0.00%  lua      [unknown]         [.] 0xbc832c5b06002404
+     0.01%     0.00%  lua      [unknown]         [.] 0x76ab1b6706002404
+     0.01%     0.00%  lua      [unknown]         [.] 0x0000000000010009
+     0.01%     0.00%  lua      [unknown]         [.] 0x9bdc9cf40a002404
+     0.01%     0.00%  lua      [unknown]         [.] 0x2d6b20e905002404
+     0.01%     0.01%  lua      lua               [.] luaD_shrinkstack
+     0.01%     0.01%  lua      lua               [.] clearbyvalues
+     0.01%     0.00%  lua      lua               [.] finishgencycle
+     0.01%     0.01%  lua      lua               [.] reallymarkobject
+     0.01%     0.00%  lua      [unknown]         [.] 0x0000000000012006
+     0.01%     0.00%  lua      lua               [.] convergeephemerons
+     0.00%     0.00%  lua      [unknown]         [.] 0xbf8f82a5e0c583a6
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000000010006
+     0.00%     0.00%  lua      lua               [.] luaD_checkminstack
+     0.00%     0.00%  lua      lua               [.] objsize
+     0.00%     0.00%  lua      lua               [.] correctgraylist
+     0.00%     0.00%  lua      lua               [.] luaO_applyparam
+     0.00%     0.00%  lua      lua               [.] luaE_setdebt
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000001069a30
+     0.00%     0.00%  lua      [unknown]         [.] 0xab20556407002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xecb2b29609002404
+     0.00%     0.00%  lua      [unknown]         [k] 0xffffffffb1a00b87
+     0.00%     0.00%  lua      [unknown]         [.] 0x0300000000000000
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000000106a
+     0.00%     0.00%  lua      lua               [.] markmt
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000000000010
+     0.00%     0.00%  lua      lua               [.] separatetobefnz
+     0.00%     0.00%  lua      [unknown]         [.] 0xa600000000010699
+     0.00%     0.00%  lua      [unknown]         [.] 0x5100000000000000
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000000000045
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000001065fd0
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000001069d
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000106a310
+     0.00%     0.00%  lua      [unknown]         [.] 0x75f7a51d0a002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x5de53af40b002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x6167c82b09002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x99cdf63a0c002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xe913ef2107002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xa703cc7808002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x75f7a5110a002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x8ae7ca0409002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xe00c5e3802002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x2d6ec6ca05002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xa7649cba05002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xbf562fd804002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xbc80746006002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xbf595feb04002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x07cb14b705002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x2c53a37405002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x63e0232006002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xdf8440e20a002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x2d669cf405002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xbf592ca004002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x4d5403b507002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x2e64747405002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000001062f
+     0.00%     0.00%  lua      lua               [.] setminordebt
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000000000004
+     0.00%     0.00%  lua      [unknown]         [.] 0x8cb5403e11000404
+     0.00%     0.00%  lua      [unknown]         [.] 0x00000000010620a0
+     0.00%     0.00%  lua      [unknown]         [.] 0x00000001065e0000
+     0.00%     0.00%  lua      [unknown]         [.] 0x2100000000010618
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000000009896
+     0.00%     0.00%  lua      [unknown]         [.] 0x4600000000010678
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000106a250
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000001062f20
+     0.00%     0.00%  lua      lua               [.] markbeingfnz
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000106add0
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000000000001
+     0.00%     0.00%  lua      [unknown]         [.] 0x030000000000148a
+     0.00%     0.00%  lua      [unknown]         [.] 0xf92cc6d307002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xa703cc6408002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x86acd73a0b002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x1600000000004048
+     0.00%     0.00%  lua      [unknown]         [.] 0x0300000000009842
+     0.00%     0.00%  lua      [unknown]         [.] 0xa60000000001069a
+     0.00%     0.00%  lua      [unknown]         [.] 0x0600000000010689
+     0.00%     0.00%  lua      [unknown]         [.] 0x00657669616e5f69
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000001069c80
+     0.00%     0.00%  lua      [unknown]         [.] 0x00000000000000b5
+     0.00%     0.00%  lua      lua               [.] luaE_shrinkCI
+     0.00%     0.00%  lua      [unknown]         [.] 0xa000000000000000
+     0.00%     0.00%  lua      [unknown]         [.] 0x0300000000003ca1
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000001069f
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000106a900
+     0.00%     0.00%  lua      [unknown]         [.] 0x460000000001068f
+     0.00%     0.00%  lua      [unknown]         [.] 0x0200007ffeeb0461
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000001069320
+     0.00%     0.00%  lua      [unknown]         [.] 0x4880000038008100
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000001068ff9
+     0.00%     0.00%  lua      lua               [.] clearbykeys
+     0.00%     0.00%  lua      [unknown]         [.] 0x300000000001067a
+     0.00%     0.00%  lua      [unknown]         [.] 0xe000000000000044
+     0.00%     0.00%  lua      [unknown]         [.] 0x00000000000004d1
+     0.00%     0.00%  lua      [unknown]         [.] 0x00000000010693d0
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000000000020
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000106b2f0
+     0.00%     0.00%  lua      [unknown]         [.] 0xffffffff00004403
+     0.00%     0.00%  lua      [unknown]         [.] 0x0300000000005541
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000000989680
+     0.00%     0.00%  lua      [unknown]         [.] 0x460000000001063a
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000001063a10
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000303002405
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000006002405
+     0.00%     0.00%  lua      [unknown]         [.] 0x000000000000452f
+     0.00%     0.00%  lua      [unknown]         [.] 0x0000000002010001
+     0.00%     0.00%  lua      [unknown]         [.] 0x00000000000003db
+     0.00%     0.00%  lua      lua               [.] check_readonly
+     0.00%     0.00%  lua      lua               [.] luaH_psetshortstr
+     0.00%     0.00%  lua      [unknown]         [.] 0x7f0c392e0b002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x2e65b43d05002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x2d49780f05002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x99cdf62e0c002404
+     0.00%     0.00%  lua      [unknown]         [.] 0xe913ef2d07002404
+     0.00%     0.00%  lua      [unknown]         [.] 0x6861787308001004
+     0.00%     0.00%  lua      [unknown]         [.] 0x00000000007f1005
+     0.00%     0.00%  lua      lua               [.] internshrstr
+     0.00%     0.00%  lua      libc-2.28.so      [.] __GI___libc_open
+     0.00%     0.00%  lua      [unknown]         [k] 0xffffffffb1a001a5
+     0.00%     0.00%  lua      ld-2.28.so        [.] _start
+
+
+#
+# (Tip: If you have debuginfo enabled, try: perf report -s sym,srcline)
+#
