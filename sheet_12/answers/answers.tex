@@ -74,9 +74,28 @@ SETTABUP       : 3
 \end{verbatim}
 
 \section{Code Understanding}
-As seen on the \texttt{perf} report, the interpreter spends a lot of time in \texttt{luaV\_execute}. Inside that is a large switch statement which checks against different OP\_IDs to determine what to do next. As expected, this takes a lot of time and is inefficient.
+There are two major phases in the Lua interpreter, script compilation and script execution. The interpreter first goes through the program code to convert it into Lua bytecode instructions. This bytecode is then executed by Lua's virtual machine. The majority of it is handled by the \texttt{luaV\_execute} function. This function consists of a large switch statement which checks against different OP\_IDs to determine what to do.
+
+The compile time was measured by using \texttt{luac}, which only compiles the program and doesn't execute it. This pre-compiled bytecode was then used to measure the execution time. We can clearly see that the compilation time for the benchmark is minuscule compared to the execution time. 
+
+\begin{verbatim}
+    Compilation Median:     00.0083 sec
+    Execution Median:       37.4024 sec
+\end{verbatim}
+
+As seen on the \texttt{perf} report, the interpreter spends a lot of time in \texttt{luaV\_execute}. As expected, this takes a lot of time and is inefficient.
 \\
-\texttt{LUA\_USE\_JUMPTABLE} helps with that by enabling direct-threaded dispatch in the virtual machine using GCC/Clang computed gotos. This replaces the large switch statement, thus increasing performance.
+\texttt{LUA\_USE\_JUMPTABLE} helps with that by enabling direct-threaded dispatch in the virtual machine using GCC/Clang computed gotos. This replaces the large switch statement, thus increasing performance. The jumptable only works with gcc/clang and is turned automatically on when compiled with either of those. It can be turned off by passing \texttt{-DLUA\_USE\_JUMPTABLE=0} to the compiler.
+
+\begin{verbatim}
+ Function                         :  With      :  Without   :  Speedup :
+100 x fibonacci_naive(30)         :  13.7866 s :  13.8432 s :  x 1.004 :
+10000000 x fibonacci_tail(30)     :  15.8393 s :  19.2325 s :  x 1.214 :
+25000000 x fibonacci_iter(30)     :  12.2847 s :  14.7320 s :  x 1.199 :
+Median of averages                :  13.7609 s :  14.7412 s :  x 1.071 :
+\end{verbatim}
+
+The speedup column reveals how much faster the program is executed when gotos are utilized. The performance gains do differ across different implementations. The recursive implementation \texttt{fibonacci\_naive} shows barley any improvement, most likely due the overhead of the function constantly calling itself and managing those recursive layers. Both the tail-recursive and iterative implementations see a speedup of $\sim$20\%. They spend most of their time executing the same small sequence of operations over and over again, which the jumptable improves. 
 
 \section{Optimization}
 Applying heuristics to OP\_ADD resulted in ~1.4\% performance increase
