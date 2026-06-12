@@ -97,9 +97,26 @@ Median of averages                :  13.7609 s :  14.7412 s :  x 1.071 :
 
 The speedup column reveals how much faster the program is executed when gotos are utilized. The performance gains do differ across different implementations. The recursive implementation \texttt{fibonacci\_naive} shows barley any improvement, most likely due the overhead of the function constantly calling itself and managing those recursive layers. Both the tail-recursive and iterative implementations see a speedup of $\sim$20\%. They spend most of their time executing the same small sequence of operations over and over again, which the jumptable improves. 
 
+\newpage
 \section{Optimization}
-Applying heuristics to OP\_ADD resulted in ~1.4\% performance increase
-Using all optimizations above and -fprofile-generate + -fprofile-use resulted in ~9.6\% performance increase
+To measure performance, at least $5$ benchmarks were run. Then the median of the average from all $3$ values of the benchmark were compared.
+This way, an optimization that only benefits once variation but slows down the others would not show up as more performant.
+The following optimizations were implemented:
+\\\\
+Applying heuristics to OP\_ADD resulted in $~1.4\%$ performance increase. Since the program only uses ints, we used a faster calculation for these cases:
+\begin{verbatim}
+// Apply heuristic of ints
+if (ttisinteger(v1) && ttisinteger(v2)) {
+  lua_Integer i1 = ivalue(v1);
+  lua_Integer i2 = ivalue(v2);
+  setivalue(s2v(RA(i)), intop(+, i1, i2));
+  pc++; /* skip following MMBIN */
+  vmbreak;
+}
+\end{verbatim}
+
+\noindent
+Using the heuristic optimizations above and \texttt{-fprofile-generate} + \texttt{-fprofile-use} resulted in a $~9.6\%$ performance increase.
 
 % Copied form earlier exercise to display many plots
 % \begin{figure}[H]
