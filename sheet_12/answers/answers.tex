@@ -34,9 +34,10 @@ LCC3 fib.lua results:
 The median of averages from 20 runs was 13.7609 s
 
 \section{Profiling}
-Initially, only the benchmark was profiled using profile.lua (\url{https://github.com/2dengine/profile.lua}). This however only shows a profile of the functions, making it unusable for optimizations on the lua interpreter itself. 
-\\
-After that, \texttt{perf} was used. The results were more informative:
+
+Initially we used \texttt{profile.lua}(\url{https://github.com/2dengine/profile.lua}) to profile the benchmark. However this only profiles the Lua script itself, showing which Lua functions take the most time. It confirmed that the Fibonacci functions are the main workload. Since we are not allowed to modify the Lua script, knowing which script-level function is slow does not give us any starting point for optimizing the interpreter.
+
+We then used \texttt{perf} to profile the program. This result was more useful because it breaks down the time spent in the C source code.
 
 \begin{verbatim}
 [...]
@@ -57,7 +58,9 @@ After that, \texttt{perf} was used. The results were more informative:
 [...]
 \end{verbatim}
 
-Additionally, manual counting of OPs was included to see, which OPs were called the most:
+The programs spends $\sim$79\% of its time in \texttt{luaV\_execute}, which is the core VM loop, meaning we should focus our efforts there. It also shows some time is spent in \texttt{luaD\_precall} and \texttt{luaD\_pretailcall} ($\sim$15\% combined). This tells us that the overhead isn't just in executing instructions, but also in the management of the Lua stack and function calls.
+
+We also manually added opcode statistics to get a closer look at what \texttt{luaV\_execute} does internally, which tells us what the hottest parts of the code are and gives us hints where our optimizations could start.
 
 \begin{verbatim}
 --- Opcode Statistics ---
