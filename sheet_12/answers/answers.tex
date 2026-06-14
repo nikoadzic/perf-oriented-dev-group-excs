@@ -102,11 +102,29 @@ The speedup column reveals how much faster the program is executed when gotos ar
 
 \newpage
 \section{Optimization}
-To measure performance, at least $5$ benchmarks were run. Then the median of the average from all $3$ values of the benchmark were compared.
-This way, an optimization that only benefits once variation but slows down the others would not show up as more performant.
-The following optimizations were implemented:
-\\\\
-Applying heuristics to OP\_ADD resulted in $~1.4\%$ performance increase. Since the program only uses ints, we used a faster calculation for these cases:
+Each configuration was run $5$ times. For every benchmark variant (\texttt{naive}, \texttt{tail}, \texttt{iter}) we take the median over the runs and report \texttt{AVG} as the mean of those three medians. The median guards against single slow runs, and averaging over all three variants stops an optimization that only helps one variant while hurting the others from looking like an overall win.
+
+\subsection{Compiler flags}
+Before touching the interpreter source we tested several compiler configurations to see how much performance build flags alone can buy.
+
+\begin{verbatim}
+config                            naive    tail    iter     AVG   vs base
+baseline (-O2)                   11.868  15.899  11.374  13.047       --
+O3                               12.155  16.146  11.410  13.237    +1.5%
+O3 -march=native                 12.194  16.066  12.049  13.437    +3.0%
+O3 -fno-gcse -fno-crossjumping   11.952  14.852  10.462  12.422    -4.8%
+O3 + PGO                         11.901  13.901  10.216  12.006    -8.0%
+O3 + PGO -fno-gcse -fno-crossj.  11.892  15.001   9.894  12.262    -6.0%
+O3 + PGO -march=native           10.986  14.715  10.503  12.068    -7.5%
+\end{verbatim}
+
+Two results stand out. First, going from \texttt{-O2} to \texttt{-O3} did not help and even made the interpreter slightly slower, with or without \texttt{-march=native}. The VM is one tight dispatch loop and the extra inlining and unrolling that \texttt{-O3} adds mostly grow the code rather than speed it up. Second, \texttt{-fno-gcse -fno-crossjumping} gave a $\sim$5\% speedup. Normally these two passes merge the repeated ends of the opcode handlers into one shared spot. Turning them off keeps a separate jump for each opcode, which the CPU predicts much better.
+
+The only flag that reliably paid off was profile-guided optimization (PGO) at $\sim$8\%. The two speedups do not add up though. Putting \texttt{-fno-gcse -fno-crossjumping} on top of PGO is about $2\%$ slower than PGO on its own. The slowdown is all in the \texttt{tail} variant ($15.00$\,s vs.\ $13.90$\,s), while \texttt{iter} gets a little better. PGO already lays out the hot code better than these flags do, so adding them on top only gets in the way. PGO with \texttt{-march=native} was also slightly worse than PGO alone, so native code does not help here either. We therefore use plain \texttt{-O3 + PGO} for the optimization below.
+
+\subsection{Integer fast-path for \texttt{OP\_ADD}}
+The benchmark only ever adds integers, so we gave the \texttt{OP\_ADD} handler a fast path that adds two integer operands directly and skips the following \texttt{MMBIN} metamethod check. On its own this gave a $\sim$1.4\% speedup. The added code is shown below.
+
 \begin{verbatim}
 // Apply heuristic of ints
 if (ttisinteger(v1) && ttisinteger(v2)) {
@@ -118,8 +136,47 @@ if (ttisinteger(v1) && ttisinteger(v2)) {
 }
 \end{verbatim}
 
-\noindent
-Using the heuristic optimizations above and \texttt{-fprofile-generate} + \texttt{-fprofile-use} resulted in a $~9.6\%$ performance increase.
+\subsection{Interpreter fast-path for \texttt{OP\_CALL}}
+The \texttt{perf} profile showed $\sim$15\% of the runtime in \texttt{luaD\_precall} / \texttt{luaD\_pretailcall}, the helper functions that set up a new call frame. Most calls in the benchmark are just calls to a normal Lua function, which only needs a short, fixed setup, but the code still reaches it through a separate function call and a type check. We moved that common case straight into the \texttt{OP\_CALL} handler in \texttt{luaV\_execute}, so it builds the new call frame and jumps right into the called function. All other calls (C functions and \texttt{\_\_call} metamethods) still go through the original \texttt{luaD\_precall}.
+
+\begin{verbatim}
+if (l_likely(ttisLclosure(s2v(ra)))) {
+  /* fast path: call to a plain Lua closure -- inline the common
+     LUA_VLCL case of luaD_precall, skipping the out-of-line call. */
+  Proto *p = clLvalue(s2v(ra))->p;
+  int narg = cast_int(L->top.p - ra) - 1;
+  int nfixparams = p->numparams;
+  int fsize = p->maxstacksize;
+  savepc(ci);
+  checkstackp(L, fsize, ra);            /* may move the stack; fixes 'ra' */
+  newci = L->ci->next ? L->ci->next : luaE_extendCI(L);
+  L->ci = newci;
+  newci->func.p = ra;
+  newci->callstatus = cast_uint(nresults + 1);
+  newci->top.p = ra + 1 + fsize;
+  newci->u.l.savedpc = p->code;
+  for (; narg < nfixparams; narg++)
+    setnilvalue(s2v(L->top.p++));        /* complete missing arguments */
+  ci = newci;
+  goto startfunc;
+}
+\end{verbatim}
+
+To separate the patch from PGO, we benchmarked three interpreters on the same node interleaved. 
+
+\begin{verbatim}
+config                       naive    tail    iter     AVG
+baseline (-O2, vanilla)     12.649  16.129  11.990  13.589
+PGO only (O3+PGO)           12.798  14.260  10.370  12.476
+patched (OP_CALL + O3+PGO)  10.898  13.990  10.137  11.675
+
+                             naive    tail    iter     AVG
+patched vs baseline         -13.8%  -13.3%  -15.4%  -14.1%
+patched vs PGO-only         -14.8%   -1.9%   -2.2%   -6.4%
+(node n002, median of 5 runs; negative = faster)
+\end{verbatim}
+
+Together with PGO, the patched interpreter is $\sim$14\% faster than the \texttt{-O2} baseline. The last row shows the patch on its own, which adds another $\sim$6\% on top of PGO. That average is misleading though, because almost all of it comes from \texttt{naive} ($-15\%$), the recursive version that spends its time on function calls. The \texttt{tail} and \texttt{iter} versions, which mostly run loops, move only $\sim$2\%, which is within the noise between runs. This is what we expected, since the patch only shortens the call path. It helps code that calls a lot and does little for code that stays in a loop. So the fast-path is a clear win for call-heavy code and makes no real difference elsewhere.
 
 % Copied form earlier exercise to display many plots
 % \begin{figure}[H]

@@ -1735,6 +1735,28 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         if (b != 0)  /* fixed number of arguments? */
           L->top.p = ra + b;  /* top signals number of arguments */
         /* else previous instruction set top */
+        if (l_likely(ttisLclosure(s2v(ra)))) {
+          /* fast path: call to a plain Lua closure. Inline the common
+             LUA_VLCL case of luaD_precall (ldo.c) so the hot call path
+             skips the out-of-line call and its type switch. Every other
+             case (C functions, __call metamethods) takes the slow path. */
+          Proto *p = clLvalue(s2v(ra))->p;  /* 'p' is a heap ptr: survives realloc */
+          int narg = cast_int(L->top.p - ra) - 1;  /* number of real arguments */
+          int nfixparams = p->numparams;
+          int fsize = p->maxstacksize;  /* frame size */
+          savepc(ci);  /* checkstackp / luaE_extendCI may error or reallocate */
+          checkstackp(L, fsize, ra);  /* may move the stack; fixes up 'ra' */
+          newci = L->ci->next ? L->ci->next : luaE_extendCI(L);  /* prepCallInfo */
+          L->ci = newci;
+          newci->func.p = ra;
+          newci->callstatus = cast_uint(nresults + 1);
+          newci->top.p = ra + 1 + fsize;
+          newci->u.l.savedpc = p->code;  /* starting point */
+          for (; narg < nfixparams; narg++)
+            setnilvalue(s2v(L->top.p++));  /* complete missing arguments */
+          ci = newci;
+          goto startfunc;
+        }
         savepc(ci);  /* in case of errors */
         if ((newci = luaD_precall(L, ra, nresults)) == NULL)
           updatetrap(ci);  /* C call; nothing else to be done */
